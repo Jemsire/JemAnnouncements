@@ -1,0 +1,9 @@
+{
+  "Enabled": true,
+  "Notification": {
+    "Title": "<yellow><bold>Server Announcement</bold></yellow>",
+    "Subtitle": "<gray>This is a notification example</gray>",
+    "Icon": "Weapon_Sword_Mithril"
+  },
+  "Priority": 0
+}

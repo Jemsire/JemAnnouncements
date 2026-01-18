@@ -1,0 +1,18 @@
+{
+  "Group": "Jemsire",
+  "Name": "JemAnnouncements",
+  "Version": "1.0.0",
+  "Description": "Automated announcement system with support for chat, action bar, title, and sound messages",
+  "Authors": [
+    {
+      "Name": "TinyTank800"
+    }
+  ],
+  "Website": "https://jemsire.com/JemAnnouncements",
+  "ServerVersion": "*",
+  "Dependencies": {},
+  "OptionalDependencies": {},
+  "DisabledByDefault": false,
+  "IncludesAssetPack": false,
+  "Main": "com.jemsire.plugin.AnnouncementPlugin"
+}

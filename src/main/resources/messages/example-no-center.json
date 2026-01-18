@@ -1,0 +1,12 @@
+{
+  "Enabled": true,
+  "Center": false,
+  "ChatMessages": [
+    "<aqua><bold>---[Not Centered]---</bold></aqua>",
+    "<yellow>This message is NOT centered!</yellow>",
+    "<gray>Set \"Center\": false to disable centering for this announcement.</gray>",
+    "<green>Useful for left-aligned messages or custom formatting!</green>",
+    "-------------------------------------"
+  ],
+  "Priority": 0
+}

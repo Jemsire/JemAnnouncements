@@ -1,0 +1,28 @@
+{
+  "Enabled": true,
+  "Center": true,
+  "ChatMessages": [
+    "<aqua><bold>---[JemAnnouncements]---</bold></aqua>",
+    "<yellow>This is an example announcement message!</yellow>",
+    "<gray>Change me in the example.json config!</gray>",
+    "<red>You can add prefix and suffix lines directly in ChatMessages!</red>",
+    "-------------------------------------"
+  ],
+  "Notification": {
+    "Title": "<yellow><bold>Example Announcement</bold></yellow>",
+    "Subtitle": "<gray>This is an example notification</gray>",
+    "Icon": "Weapon_Sword_Mithril"
+  },
+  "Title": {
+    "Title": "<green><bold>Example Announcement</bold></green>",
+    "Subtitle": "<gray>This is an example title</gray>",
+    "IsMajor": false,
+    "FadeIn": 0.25,
+    "Stay": 5,
+    "FadeOut": 0.25
+  },
+  "Sound": {
+    "SoundName": "SFX_Unbreakable_Block"
+  },
+  "Priority": 0
+}

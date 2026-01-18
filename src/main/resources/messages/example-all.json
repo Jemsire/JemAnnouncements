@@ -1,0 +1,30 @@
+{
+  "Enabled": true,
+  "Center": true,
+  "ChatMessages": [
+    "<aqua><bold>---[Complete Example]---</bold></aqua>",
+    "<yellow>This is a complete announcement example!</yellow>",
+    "<gray>It includes all available message types.</gray>",
+    "<green>You can use any combination you want!</green>",
+    "-------------------------------------"
+  ],
+  "Notification": {
+    "Title": "<yellow><bold>Complete Example</bold></yellow>",
+    "Subtitle": "<gray>All message types combined</gray>",
+    "Icon": "Weapon_Sword_Mithril"
+  },
+  "Title": {
+    "Title": "<green><bold>Full Announcement</bold></green>",
+    "Subtitle": "<gray>Chat, Notification, Title, and Sound</gray>",
+    "IsMajor": true,
+    "FadeIn": 0.5,
+    "Stay": 7.0,
+    "FadeOut": 0.5
+  },
+  "Sound": {
+    "SoundName": "SFX_Unbreakable_Block",
+    "Volume": 1.0,
+    "Pitch": 1.0
+  },
+  "Priority": 0
+}

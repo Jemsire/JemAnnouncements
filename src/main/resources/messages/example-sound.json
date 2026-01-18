@@ -1,0 +1,9 @@
+{
+  "Enabled": true,
+  "Sound": {
+    "SoundName": "SFX_Unbreakable_Block",
+    "Volume": 1.0,
+    "Pitch": 1.0
+  },
+  "Priority": 0
+}

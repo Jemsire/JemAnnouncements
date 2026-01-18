@@ -1,0 +1,12 @@
+{
+  "Enabled": true,
+  "Title": {
+    "Title": "<green><bold>Important Announcement</bold></green>",
+    "Subtitle": "<gray>This is a title/subtitle example</gray>",
+    "IsMajor": false,
+    "FadeIn": 0.5,
+    "Stay": 5.0,
+    "FadeOut": 0.5
+  },
+  "Priority": 0
+}

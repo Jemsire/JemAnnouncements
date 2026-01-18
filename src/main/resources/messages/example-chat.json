@@ -1,0 +1,13 @@
+{
+  "Enabled": true,
+  "Center": true,
+  "ChatMessages": [
+    "<aqua><bold>---[Server Announcement]---</bold></aqua>",
+    "<yellow>Welcome to our server!</yellow>",
+    "<gray>This is a chat-only announcement example.</gray>",
+    "<green>You can use multiple lines for better formatting!</green>",
+    "<red>Supports <bold>TinyMsg</bold> tags and <color:#FF00FF>hex colors</color>!</red>",
+    "-------------------------------------"
+  ],
+  "Priority": 0
+}
