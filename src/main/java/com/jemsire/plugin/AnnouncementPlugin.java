@@ -33,8 +33,8 @@ public class AnnouncementPlugin extends JavaPlugin {
         return instance;
     }
 
-    private Config<AnnouncementConfig> announcementConfig;
-    private Map<String, Config<AnnouncementMessage>> messageConfigs = new HashMap<>();
+    private final Config<AnnouncementConfig> announcementConfig;
+    private final Map<String, Config<AnnouncementMessage>> messageConfigs = new HashMap<>();
 
     public AnnouncementPlugin(@Nonnull JavaPluginInit init) {
         super(init);

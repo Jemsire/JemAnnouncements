@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class AnnouncementScheduler {
     private static ScheduledExecutorService scheduler;
     private static ScheduledFuture<?> scheduledTask;
-    private static AtomicInteger sequentialIndex = new AtomicInteger(0);
+    private static final AtomicInteger sequentialIndex = new AtomicInteger(0);
     private static boolean isRunning = false;
     
     /**
