@@ -34,11 +34,18 @@ Paste relevant logs here
 - **Operating System**: [e.g. Windows 10, Linux, macOS]
 
 ## Configuration
-If relevant, please share your `WebhookConfig.json` (remove your webhook URL for security!):
+If relevant, please share your `Event.json`:
 ```json
 {
-  "WebhookLink": "REDACTED",
-  "Version": 1
+  "Enabled": true,
+  "Center": true,
+  "ChatMessages": [
+    "<aqua><bold>---[Complete Example]---</bold></aqua>",
+    "<yellow>This is a complete announcement example!</yellow>",
+    "<gray>It includes all available message types.</gray>",
+    "<green>You can use any combination you want!</green>",
+    "-------------------------------------"
+  ]
 }
 ```
 
