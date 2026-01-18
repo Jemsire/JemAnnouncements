@@ -227,6 +227,26 @@ The plugin supports both TinyMsg tags and legacy color codes:
 
 **Note:** Legacy color codes are automatically converted to TinyMsg format. Both formats can be used together in the same message.
 
+## Screenshots
+
+### Main Configuration File
+![Main Configuration File](assets/images/ConfigFile.png)
+
+### Message Configuration File
+![Message Configuration File](assets/images/AnnouncementFile.png)
+
+### Chat Message Example
+![Chat Message Example](assets/images/ChatExample.png)
+
+### Centered Chat Message Example
+![Centered Chat Message Example](assets/images/CenteredChatExample.png)
+
+### Notification Example
+![Notification Example](assets/images/NotificationExample.png)
+
+### Title Example
+![Title Example](assets/images/TitleExample.png)
+
 ## Commands
 
 - `/announce-reload` - Reloads the plugin configuration and messages without restarting the server
