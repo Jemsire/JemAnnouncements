@@ -2,6 +2,8 @@ package com.jemsire.commands;
 
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
+import com.hypixel.hytale.server.core.command.system.arguments.system.RequiredArg;
+import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
 import com.hypixel.hytale.server.core.command.system.basecommands.CommandBase;
 import com.hypixel.hytale.server.core.util.Config;
 import com.jemsire.config.AnnouncementMessage;
@@ -19,6 +21,8 @@ import java.util.Map;
  */
 public class AnnounceCommand extends CommandBase {
 
+    private final RequiredArg<String> messageNameArg = this.withRequiredArg("message-name", "The name of the announcement message to send", ArgTypes.STRING);
+
     public AnnounceCommand(String name, String description) {
         super(name, description);
     }
@@ -33,20 +37,14 @@ public class AnnounceCommand extends CommandBase {
             }
         }
 
-        // Check if message name argument is provided
-        if (context.getInputString().isEmpty()) {
-            context.sendMessage(Message.raw("Usage: /announce <message-name>").color(Color.YELLOW));
-            context.sendMessage(Message.raw("Example: /announce example").color(Color.GRAY));
-            return;
-        }
-
-        String messageName = context.getInputString().split(" ")[0];
-
         AnnouncementPlugin plugin = AnnouncementPlugin.get();
         if (plugin == null) {
             context.sendMessage(Message.raw("Plugin instance not available!").color(Color.RED));
             return;
         }
+
+        // Get the message name from the required argument
+        String messageName = context.get(messageNameArg);
 
         // Get the message config by name (configs are stored without .json extension)
         Map<String, Config<AnnouncementMessage>> messageConfigs = plugin.getMessageConfigs();
