@@ -76,9 +76,11 @@ public class MessageSender {
     }
 
     /**
-     * Sends chat messages to all players (in order)
-     * Supports both TinyMsg tags and legacy & color codes
-     * Messages are centered if the message's Center setting is enabled
+     * Sends chat messages to all players (in order).
+     * Uses TinyMsg API: parses tags like &lt;color:X&gt;, &lt;gradient:X:Y&gt;, &lt;b&gt;, &lt;link:url&gt;.
+     * Legacy &amp; color codes are converted to TinyMsg tags before parsing.
+     * Messages are centered if the message's Center setting is enabled.
+     * One &lt;offset:N&gt; per line adjusts centering: positive = more leading spaces (shift right), negative = fewer (shift left). Tag is stripped and not shown.
      */
     private static void sendChatMessages(List<PlayerRef> players, String[] chatMessages, boolean shouldCenter) {
         if (chatMessages == null || chatMessages.length == 0) {
@@ -92,11 +94,12 @@ public class MessageSender {
                 continue; // Skip empty messages
             }
 
-            // Center the message if enabled for this announcement
-            String messageToSend = shouldCenter ? centerText(chatMessage) : chatMessage;
-            
-            // Parse message using TinyMsg (supports tags like <red>, <bold>, <color:#FF0000>, etc.)
-            // Also supports legacy & codes by converting them first
+            // One <offset:N> per line: positive = more leading spaces, negative = fewer (stripped before display)
+            int offset = ColorUtils.getOffset(chatMessage);
+            String withoutOffsetTags = ColorUtils.stripOffsetTags(chatMessage);
+            String messageToSend = shouldCenter ? centerText(withoutOffsetTags, offset) : withoutOffsetTags;
+
+            // Parse with TinyMsg API (tags: <color:X>, <gradient:X:Y>, <b>, <link:url>, etc.); legacy & codes converted first
             String processedMessage = ColorUtils.convertLegacyColorCodes(messageToSend);
             Message message = TinyMsg.parse(processedMessage);
 
@@ -112,27 +115,19 @@ public class MessageSender {
     }
     
     /**
-     * Centers text by calculating length and adding spaces
-     * Only counts actual text characters, not formatting tags or codes
-     * @param text The text to center (may contain TinyMsg tags and legacy & codes)
+     * Centers text by calculating display width and adding leading spaces.
+     * Uses visible width (tags/hex not counted). Optional offset adjusts: positive = more spaces (shift right), negative = fewer (shift left).
+     * @param text The text to center (may contain TinyMsg tags and legacy &amp; codes; &lt;offset:N&gt; should already be stripped)
+     * @param offset Adjustment to leading spaces (e.g. from &lt;offset:5&gt; or &lt;offset:-2&gt; tags)
      * @return The centered text with spaces prepended
      */
-    private static String centerText(String text) {
+    private static String centerText(String text, int offset) {
         if (text == null || text.isEmpty()) {
             return text;
         }
-        
-        // Strip all color codes and formatting tags using ColorUtils
-        String plainText = ColorUtils.stripColorCodes(text);
-        
-        // Calculate actual text length (only visible characters, no formatting)
-        int textLength = plainText.length();
-        
-        // Center width is 77 characters
-        int centerWidth = 77;
-        int spacesNeeded = (centerWidth - textLength) / 2;
-        
-        // Add spaces before the text to center it
+        int displayWidth = ColorUtils.getVisibleWidthForCentering(text);
+        int centerWidth = 80;
+        int spacesNeeded = (centerWidth - displayWidth) / 2 + offset;
         return " ".repeat(Math.max(0, spacesNeeded)) + text;
     }
 
@@ -145,7 +140,7 @@ public class MessageSender {
             return;
         }
 
-        // Parse title and subtitle using TinyMsg
+        // Parse title and subtitle using TinyMsg API
         String processedTitle = ColorUtils.convertLegacyColorCodes(notificationConfig.getTitle());
         String processedSubtitle = ColorUtils.convertLegacyColorCodes(notificationConfig.getSubtitle());
 
@@ -181,33 +176,30 @@ public class MessageSender {
     }
 
     /**
-     * Sends a title/subtitle to all players
+     * Sends a title/subtitle to all players.
+     * Title and subtitle.
      */
     private static void sendTitle(List<PlayerRef> players, AnnouncementMessage.TitleConfig titleConfig) {
         if (titleConfig == null) {
             return;
         }
 
-        // Parse messages using TinyMsg
         String titleText = titleConfig.getTitle();
         String subtitleText = titleConfig.getSubtitle();
 
-        // Parse title message - use plain text (EventTitleUtil works best with Message.raw())
+        // Parse title does not support color text.
         Message titleMessage;
         if (titleText != null && !titleText.isEmpty()) {
             String processedTitle = ColorUtils.convertLegacyColorCodes(titleText);
-            // Strip tags for EventTitleUtil compatibility
             String plainTitle = ColorUtils.stripColorCodes(processedTitle);
             titleMessage = Message.raw(plainTitle);
         } else {
             titleMessage = Message.raw("");
         }
 
-        // Parse subtitle message
         Message subtitleMessage;
         if (subtitleText != null && !subtitleText.isEmpty()) {
             String processedSubtitle = ColorUtils.convertLegacyColorCodes(subtitleText);
-            // Strip tags for EventTitleUtil compatibility
             String plainSubtitle = ColorUtils.stripColorCodes(processedSubtitle);
             subtitleMessage = Message.raw(plainSubtitle);
         } else {

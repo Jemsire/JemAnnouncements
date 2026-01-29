@@ -46,43 +46,45 @@ public class AnnounceCommand extends CommandBase {
         // Get the message name from the required argument
         String messageName = context.get(messageNameArg);
 
-        // Get the message config by name (configs are stored without .json extension)
-        Map<String, Config<AnnouncementMessage>> messageConfigs = plugin.getMessageConfigs();
-        
         // Remove .json extension if provided
         String configKey = messageName;
         if (configKey.endsWith(".json")) {
             configKey = configKey.substring(0, configKey.length() - 5);
         }
 
+        Map<String, Config<AnnouncementMessage>> messageConfigs = plugin.getMessageConfigs();
         Config<AnnouncementMessage> messageConfig = messageConfigs.get(configKey);
-        
-        if (messageConfig == null) {
+        AnnouncementMessage message;
+
+        if (messageConfig != null) {
+            try {
+                messageConfig.load();
+                message = messageConfig.get();
+            } catch (Exception e) {
+                context.sendMessage(Message.raw("Error loading message: " + e.getMessage()).color(Color.RED));
+                return;
+            }
+        } else {
+            // Check dynamically loaded messages (new files added after startup)
+            message = plugin.getDynamicMessageConfigs().get(configKey);
+        }
+
+        if (message == null) {
+            java.util.Set<String> allNames = new java.util.TreeSet<>(messageConfigs.keySet());
+            allNames.addAll(plugin.getDynamicMessageConfigs().keySet());
             context.sendMessage(Message.raw("Message '" + messageName + "' not found!").color(Color.RED));
-            context.sendMessage(Message.raw("Available messages: " + String.join(", ", messageConfigs.keySet())).color(Color.GRAY));
+            context.sendMessage(Message.raw("Available messages: " + String.join(", ", allNames)).color(Color.GRAY));
             return;
         }
 
-        // Load the message config
+        if (!message.isEnabled()) {
+            context.sendMessage(Message.raw("Message '" + messageName + "' is disabled!").color(Color.YELLOW));
+            return;
+        }
+
         try {
-            messageConfig.load();
-            AnnouncementMessage message = messageConfig.get();
-            
-            if (message == null) {
-                context.sendMessage(Message.raw("Failed to load message '" + messageName + "'!").color(Color.RED));
-                return;
-            }
-
-            // Check if message is enabled
-            if (!message.isEnabled()) {
-                context.sendMessage(Message.raw("Message '" + messageName + "' is disabled!").color(Color.YELLOW));
-                return;
-            }
-
-            // Send the announcement
             MessageSender.sendAnnouncement(message);
             context.sendMessage(Message.raw("Announcement '" + messageName + "' sent successfully!").color(Color.GREEN));
-            
         } catch (Exception e) {
             context.sendMessage(Message.raw("Error sending announcement: " + e.getMessage()).color(Color.RED));
         }

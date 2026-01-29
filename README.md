@@ -128,10 +128,24 @@ Each announcement message has its own configuration file in `Jemsire_JemAnnounce
   "Enabled": true,
   "Center": true,
   "ChatMessages": [
-    "<aqua><bold>---[Server Rules]---</bold></aqua>",
-    "<yellow>1. Be respectful to other players</yellow>",
-    "<yellow>2. No griefing or cheating</yellow>",
-    "<yellow>3. Have fun!</yellow>"
+    "<aqua><b>---[Server Rules]---</b></aqua>",
+    "<e>1. Be respectful to other players</e>",
+    "<e>2. No griefing or cheating</e>",
+    "<e>3. Have fun!</e>"
+  ]
+}
+```
+
+**Centered with offset (fine-tune centering per line):**
+
+```json
+{
+  "Enabled": true,
+  "Center": true,
+  "ChatMessages": [
+    "<offset:-3><6>Shifted left by 3 spaces</6>",
+    "<aqua>Normal centered line</aqua>",
+    "<offset:5><green>Shifted right by 5 spaces</green>"
   ]
 }
 ```
@@ -212,20 +226,36 @@ Each announcement message has its own configuration file in `Jemsire_JemAnnounce
 
 #### Formatting Support
 
-The plugin supports both TinyMsg tags and legacy color codes:
+The plugin supports TinyMsg tags, legacy `&` color codes, and centering offsets.
 
-**TinyMsg Tags(like html):**
-- `<red>`, `<blue>`, `<green>`, etc. - Color tags
-- `<bold>`, `<italic>`, `<underline>`, `<strikethrough>` - Formatting tags
-- `<color:#FF0000>` - Custom hex colors
-- `<reset>` - Reset formatting
+**TinyMsg tags (HTML-like):**
 
-**Legacy Color Codes:**
-- `&0` through `&f` - Color codes
-- `&l` (bold), `&o` (italic), `&n` (underline), `&m` (strikethrough)
-- `&r` - Reset formatting
+| Tag | Aliases | Example | Description |
+|-----|---------|---------|-------------|
+| `<color:X>` | `<c:X>`, `<colour:X>` | `<color:red>text</color>` | Named or hex color |
+| `<gradient:X:Y>` | `<grnt:X:Y>` | `<gradient:gold:red>text</gradient>` | Color gradient |
+| `<bold>` | `<b>` | `<b>text</b>` | Bold |
+| `<italic>` | `<i>`, `<em>` | `<i>text</i>` | Italic |
+| `<underline>` | `<u>` | `<u>text</u>` | Underline |
+| `<monospace>` | `<mono>` | `<mono>text</mono>` | Monospace |
+| `<link:URL>` | `<url:URL>` | `<link:https://example.com>click</link>` | Clickable link |
+| `<reset>` | `<r>` | `<b>bold<reset>normal` | Reset formatting |
 
-**Note:** Legacy color codes are automatically converted to TinyMsg format. Both formats can be used together in the same message.
+**Named colors:** `black`, `dark_blue`, `dark_green`, `dark_aqua`, `dark_red`, `dark_purple`, `gold`, `gray`, `dark_gray`, `blue`, `green`, `aqua`, `red`, `light_purple`, `yellow`, `white`
+
+**Minecraft-style legacy tags:** Use `<0>`–`<9>` and `<a>`, `<b>`, `<d>`, `<e>`, `<f>` for the same colors as `&0`–`&f` (e.g. `<e>yellow</e>`, `<6>gold</6>`). Use `<red>` or `<color:red>` for red so `<c:#FF0000>` still works for hex.
+
+**Hex colors:** `<color:#FF0000>red</color>` or `<c:#FF00FF>magenta</color>`
+
+**Legacy `&` color codes (converted to TinyMsg before parsing):**
+- `&0`–`&f` – Colors (e.g. `&a` green, `&c` red)
+- `&l` bold, `&o` italic, `&n` underline, `&r` reset
+- `&#RRGGBB` and `&x&R&R&G&G&B&B` – Hex colors
+
+**Centering offset (one per line when Center is enabled):**
+- `<offset:N>` – Adjust leading spaces: positive = shift right, negative = shift left (e.g. `<offset:-2>`, `<offset:5>`). The tag is stripped and not shown.
+
+**Note:** Legacy `&` codes are converted to TinyMsg tags before parsing. You can mix tags and `&` codes in the same message.
 
 ## Screenshots
 
@@ -427,10 +457,10 @@ JemAnnouncements/
 
 ### Formatting Not Working
 
-- Verify TinyMsg tags are properly closed (e.g., `<bold>text</bold>`)
+- Verify TinyMsg tags are properly closed (e.g., `<b>text</b>`)
 - Check that legacy color codes use `&` symbol (not `§`)
-- Ensure color codes and tags are properly nested
-- Some formatting may not work in title messages (they use plain text)
+- Use named colors or `<color:name>` / `<c:hex>` for colors; Minecraft-style `<0>`–`<9>`, `<a>`, `<b>`, `<d>`, `<e>`, `<f>` also work
+- One `<offset:N>` per line adjusts centering (positive = right, negative = left); tag is stripped and not shown
 
 ### Sound Not Playing
 

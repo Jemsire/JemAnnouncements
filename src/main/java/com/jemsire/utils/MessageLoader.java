@@ -11,9 +11,8 @@ import java.util.*;
  * Dynamically discovers and loads all .json files.
  */
 public class MessageLoader {
-    private static final String MESSAGES_FOLDER = "messages";
-    private static List<AnnouncementMessage> loadedMessages = new ArrayList<>();
-    private static Map<String, Config<AnnouncementMessage>> messageConfigs = new HashMap<>();
+    private static final List<AnnouncementMessage> loadedMessages = new ArrayList<>();
+    private static final Map<String, Config<AnnouncementMessage>> messageConfigs = new HashMap<>();
     
     /**
      * Loads all message files from the messages folder.
@@ -113,6 +112,16 @@ public class MessageLoader {
                 }
             } catch (Exception e) {
                 Logger.severe("Error reloading message config " + entry.getKey() + ": " + e.getMessage());
+            }
+        }
+        
+        // Include messages from new files (loaded manually; withConfig cannot run after setup)
+        Map<String, AnnouncementMessage> dynamicConfigs = plugin.getDynamicMessageConfigs();
+        for (Map.Entry<String, AnnouncementMessage> entry : dynamicConfigs.entrySet()) {
+            AnnouncementMessage message = entry.getValue();
+            if (message != null && message.isEnabled()) {
+                loadedMessages.add(message);
+                loadedCount++;
             }
         }
         

@@ -42,6 +42,9 @@ public class ReloadCommand extends CommandBase {
         
         boolean configChanged = (oldInterval != newInterval || oldRandomization != newRandomization);
         
+        // Re-scan messages directory so new .json files are registered before reload
+        plugin.discoverAndRegisterNewMessageConfigs();
+        
         // Reload messages
         MessageLoader.reloadMessages();
         

@@ -1,9 +1,16 @@
 package com.jemsire.config;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.hypixel.hytale.codec.Codec;
 import com.hypixel.hytale.codec.KeyedCodec;
 import com.hypixel.hytale.codec.builder.BuilderCodec;
 import com.hypixel.hytale.codec.codecs.array.ArrayCodec;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -25,7 +32,7 @@ public class AnnouncementMessage {
     public static final BuilderCodec<AnnouncementMessage> CODEC =
             BuilderCodec.builder(AnnouncementMessage.class, AnnouncementMessage::new)
                     .append(
-                            new KeyedCodec<String[]>("ChatMessages", 
+                            new KeyedCodec<String[]>("ChatMessages",
                                     new ArrayCodec<>(Codec.STRING, String[]::new)),
                             (config, value, info) -> {
                                 if (value != null) {
@@ -79,6 +86,61 @@ public class AnnouncementMessage {
                     .add()
 
                     .build();
+
+    /**
+     * Parses an announcement message from JSON. Used for loading new message files at reload
+     * without calling withConfig() (which must run before setup).
+     */
+    public static AnnouncementMessage fromJson(String json) {
+        if (json == null || json.isBlank()) {
+            return null;
+        }
+        try {
+            JsonObject root = JsonParser.parseString(json.trim()).getAsJsonObject();
+            AnnouncementMessage msg = new AnnouncementMessage();
+            if (root.has("ChatMessages") && root.get("ChatMessages").isJsonArray()) {
+                JsonArray arr = root.getAsJsonArray("ChatMessages");
+                List<String> list = new ArrayList<>();
+                for (JsonElement e : arr) {
+                    list.add(e.isJsonNull() ? "" : e.getAsString());
+                }
+                msg.chatMessages = list.toArray(new String[0]);
+            }
+            msg.centerChat = !root.has("Center") || root.get("Center").isJsonNull() || root.get("Center").getAsBoolean();
+            msg.priority = root.has("Priority") && !root.get("Priority").isJsonNull() ? root.get("Priority").getAsInt() : 0;
+            msg.enabled = !root.has("Enabled") || root.get("Enabled").isJsonNull() || root.get("Enabled").getAsBoolean();
+            if (root.has("Notification") && root.get("Notification").isJsonObject()) {
+                JsonObject n = root.getAsJsonObject("Notification");
+                NotificationConfig nc = new NotificationConfig();
+                nc.title = n.has("Title") && !n.get("Title").isJsonNull() ? n.get("Title").getAsString() : "";
+                nc.subtitle = n.has("Subtitle") && !n.get("Subtitle").isJsonNull() ? n.get("Subtitle").getAsString() : "";
+                nc.icon = n.has("Icon") && !n.get("Icon").isJsonNull() ? n.get("Icon").getAsString() : null;
+                msg.notification = nc;
+            }
+            if (root.has("Title") && root.get("Title").isJsonObject()) {
+                JsonObject t = root.getAsJsonObject("Title");
+                TitleConfig tc = new TitleConfig();
+                tc.title = t.has("Title") && !t.get("Title").isJsonNull() ? t.get("Title").getAsString() : "";
+                tc.subtitle = t.has("Subtitle") && !t.get("Subtitle").isJsonNull() ? t.get("Subtitle").getAsString() : "";
+                tc.isMajor = t.has("IsMajor") && !t.get("IsMajor").isJsonNull() && t.get("IsMajor").getAsBoolean();
+                tc.fadeIn = t.has("FadeIn") && !t.get("FadeIn").isJsonNull() ? t.get("FadeIn").getAsFloat() : 0.25f;
+                tc.stay = t.has("Stay") && !t.get("Stay").isJsonNull() ? t.get("Stay").getAsFloat() : 5.0f;
+                tc.fadeOut = t.has("FadeOut") && !t.get("FadeOut").isJsonNull() ? t.get("FadeOut").getAsFloat() : 0.25f;
+                msg.title = tc;
+            }
+            if (root.has("Sound") && root.get("Sound").isJsonObject()) {
+                JsonObject s = root.getAsJsonObject("Sound");
+                SoundConfig sc = new SoundConfig();
+                sc.soundName = s.has("SoundName") && !s.get("SoundName").isJsonNull() ? s.get("SoundName").getAsString() : "";
+                sc.volume = s.has("Volume") && !s.get("Volume").isJsonNull() ? s.get("Volume").getAsFloat() : 1.0f;
+                sc.pitch = s.has("Pitch") && !s.get("Pitch").isJsonNull() ? s.get("Pitch").getAsFloat() : 1.0f;
+                msg.sound = sc;
+            }
+            return msg;
+        } catch (Exception e) {
+            return null;
+        }
+    }
 
     public String[] getChatMessages() {
         return chatMessages;

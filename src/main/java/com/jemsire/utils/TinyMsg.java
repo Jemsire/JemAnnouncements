@@ -4,25 +4,63 @@ import com.hypixel.hytale.protocol.MaybeBool;
 import com.hypixel.hytale.server.core.Message;
 
 import java.awt.Color;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * TinyMsg - Advanced message formatting parser for Hytale.
- * Supports colors, gradients, styles, and links using tag-based syntax.
- * 
- * Example usage:
- *   TinyMsg.parse("<red>Hello</red> <bold>World</bold>")
- *   TinyMsg.parse("<color:#FF0000>Red text</color>")
- *   TinyMsg.parse("<gradient:#FF0000:#00FF00>Gradient text</gradient>")
+ * Lightweight TinyMsg-compatible rich text parser for Hytale chat/titles.
+ * Supports &lt;color:X&gt;, &lt;gradient:X:Y&gt;, &lt;b&gt;, &lt;i&gt;, &lt;u&gt;, &lt;mono&gt;, &lt;link:url&gt;, &lt;reset&gt;.
+ * Embedded in JemAnnouncements to avoid runtime dependency on the external TinyMessage plugin.
  */
-public class TinyMsg {
+public final class TinyMsg {
+
     // Matches <tag>, <tag:arg>, </tag>
     private static final Pattern TAG_PATTERN = Pattern.compile("<(/?)([a-zA-Z0-9_]+)(?::([^>]+))?>");
+
+    private static final Map<String, Color> NAMED_COLORS = new HashMap<>();
+
+    static {
+        // Named colors (Minecraft-style names)
+        NAMED_COLORS.put("black", new Color(0, 0, 0));
+        NAMED_COLORS.put("dark_blue", new Color(0, 0, 170));
+        NAMED_COLORS.put("dark_green", new Color(0, 170, 0));
+        NAMED_COLORS.put("dark_aqua", new Color(0, 170, 170));
+        NAMED_COLORS.put("dark_red", new Color(170, 0, 0));
+        NAMED_COLORS.put("dark_purple", new Color(170, 0, 170));
+        NAMED_COLORS.put("gold", new Color(255, 170, 0));
+        NAMED_COLORS.put("gray", new Color(170, 170, 170));
+        NAMED_COLORS.put("dark_gray", new Color(85, 85, 85));
+        NAMED_COLORS.put("blue", new Color(85, 85, 255));
+        NAMED_COLORS.put("green", new Color(85, 255, 85));
+        NAMED_COLORS.put("aqua", new Color(85, 255, 255));
+        NAMED_COLORS.put("red", new Color(255, 85, 85));
+        NAMED_COLORS.put("light_purple", new Color(255, 85, 255));
+        NAMED_COLORS.put("yellow", new Color(255, 255, 85));
+        NAMED_COLORS.put("white", new Color(255, 255, 255));
+        // Legacy Minecraft-style color codes: <0>-<9>, <a>, <b>, <d>-<f> (same as &0-&f; <c> omitted so <c:hex> still works)
+        NAMED_COLORS.put("0", new Color(0, 0, 0));
+        NAMED_COLORS.put("1", new Color(0, 0, 170));
+        NAMED_COLORS.put("2", new Color(0, 170, 0));
+        NAMED_COLORS.put("3", new Color(0, 170, 170));
+        NAMED_COLORS.put("4", new Color(170, 0, 0));
+        NAMED_COLORS.put("5", new Color(170, 0, 170));
+        NAMED_COLORS.put("6", new Color(255, 170, 0));
+        NAMED_COLORS.put("7", new Color(170, 170, 170));
+        NAMED_COLORS.put("8", new Color(85, 85, 85));
+        NAMED_COLORS.put("9", new Color(85, 85, 255));
+        NAMED_COLORS.put("a", new Color(85, 255, 85));
+        NAMED_COLORS.put("b", new Color(85, 255, 255));
+        NAMED_COLORS.put("d", new Color(255, 85, 255));
+        NAMED_COLORS.put("e", new Color(255, 255, 85));
+        NAMED_COLORS.put("f", new Color(255, 255, 255));
+        // "c" not added so <c:red> and <c:#FF0000> still work; use <red> or <color:red> for red
+    }
 
     private record StyleState(
             Color color,
@@ -70,33 +108,26 @@ public class TinyMsg {
         }
     }
 
+    private TinyMsg() {
+    }
+
     /**
      * Parses a string containing TinyMsg formatting tags and converts it into a Hytale Message.
-     * <p>
-     * This method processes all supported tags including colors, gradients, styles, and links.
-     * Tags can be nested indefinitely for complex formatting.
-     * </p>
      *
-     * @param text The string to parse, containing TinyMsg formatting tags
-     * @return A formatted {@link Message} object ready to be sent to players
-     * @throws NullPointerException if text is null
-     * @see Message
+     * @param text The string to parse (may be null; treated as empty)
+     * @return A formatted Message ready to be sent to players
      */
     public static Message parse(String text) {
-        if (text == null) {
-            return Message.raw("");
+        if (text == null || text.isEmpty()) {
+            return Message.empty();
         }
-        
         if (!text.contains("<")) {
             return Message.raw(text);
         }
 
         Message root = Message.empty();
-
-        // Stack keeps track of nested styles.
-        // Example: Stack = [Base, Bold, Bold+Red]
         Deque<StyleState> stateStack = new ArrayDeque<>();
-        stateStack.push(new StyleState()); // Start with default empty state
+        stateStack.push(new StyleState());
 
         Matcher matcher = TAG_PATTERN.matcher(text);
         int lastIndex = 0;
@@ -105,14 +136,12 @@ public class TinyMsg {
             int start = matcher.start();
             int end = matcher.end();
 
-            // Handle text BEFORE this tag (using the state at the top of the stack)
             if (start > lastIndex) {
                 String content = text.substring(lastIndex, start);
                 Message segmentMsg = createStyledMessage(content, stateStack.peek());
                 root.insert(segmentMsg);
             }
 
-            // Process the tag to update the Stack
             boolean isClosing = "/".equals(matcher.group(1));
             String tagName = matcher.group(2).toLowerCase();
             String tagArg = matcher.group(3);
@@ -122,19 +151,17 @@ public class TinyMsg {
                     stateStack.pop();
                 }
             } else {
-                // Start with the current state, and modify it
                 StyleState currentState = stateStack.peek();
                 StyleState newState = currentState.copy();
 
-                // If checking named colors directly
-                if (ColorUtils.hasNamedColor(tagName)) {
-                    newState = newState.withColor(ColorUtils.getNamedColor(tagName));
+                if (NAMED_COLORS.containsKey(tagName)) {
+                    newState = newState.withColor(NAMED_COLORS.get(tagName));
                 } else {
                     switch (tagName) {
                         case "color":
                         case "c":
                         case "colour":
-                            Color c = ColorUtils.parseColorArg(tagArg);
+                            Color c = parseColorArg(tagArg);
                             if (c != null) newState = newState.withColor(c);
                             break;
 
@@ -179,6 +206,8 @@ public class TinyMsg {
                             stateStack.clear();
                             newState = new StyleState();
                             break;
+                        default:
+                            break;
                     }
                 }
                 stateStack.push(newState);
@@ -197,19 +226,18 @@ public class TinyMsg {
     }
 
     private static Message createStyledMessage(String content, StyleState state) {
-        // If we have a gradient, we must return a container with char-by-char coloring
         if (state.gradient != null && !state.gradient.isEmpty()) {
             return applyGradient(content, state);
         }
 
         Message msg = Message.raw(content);
 
-        if (state.color != null) msg = msg.color(state.color);
-        if (state.bold) msg = msg.bold(true);
-        if (state.italic) msg = msg.italic(true);
-        if (state.monospace) msg = msg.monospace(true);
+        if (state.color != null) msg.color(state.color);
+        if (state.bold) msg.bold(true);
+        if (state.italic) msg.italic(true);
+        if (state.monospace) msg.monospace(true);
         if (state.underlined) msg.getFormattedMessage().underlined = MaybeBool.True;
-        if (state.link != null) msg = msg.link(state.link);
+        if (state.link != null) msg.link(state.link);
 
         return msg;
     }
@@ -221,32 +249,59 @@ public class TinyMsg {
 
         for (int index = 0; index < length; index++) {
             char ch = text.charAt(index);
-            float progress = index / (float) Math.max(length - 1, 1);
+            float progress = length <= 1 ? 0f : index / (float) (length - 1);
             Color color = interpolateColor(colors, progress);
 
             Message charMsg = Message.raw(String.valueOf(ch)).color(color);
 
-            if (state.bold) charMsg = charMsg.bold(true);
-            if (state.italic) charMsg = charMsg.italic(true);
-            if (state.monospace) charMsg = charMsg.monospace(true);
+            if (state.bold) charMsg.bold(true);
+            if (state.italic) charMsg.italic(true);
+            if (state.monospace) charMsg.monospace(true);
             if (state.underlined) charMsg.getFormattedMessage().underlined = MaybeBool.True;
-            if (state.link != null) charMsg = charMsg.link(state.link);
+            if (state.link != null) charMsg.link(state.link);
 
             container.insert(charMsg);
         }
         return container;
     }
 
+    private static Color parseColorArg(String arg) {
+        if (arg == null) return null;
+        arg = arg.trim();
+        if (NAMED_COLORS.containsKey(arg)) {
+            return NAMED_COLORS.get(arg);
+        }
+        return parseHexColor(arg);
+    }
+
     private static List<Color> parseGradientColors(String arg) {
         List<Color> colors = new ArrayList<>();
         for (String part : arg.split(":")) {
-            Color c = ColorUtils.parseColorArg(part);
+            Color c = parseColorArg(part.trim());
             if (c != null) colors.add(c);
         }
         return colors;
     }
 
+    private static Color parseHexColor(String hex) {
+        if (hex == null) return null;
+        try {
+            String clean = hex.replace("#", "").trim();
+            if (clean.length() == 6) {
+                int r = Integer.parseInt(clean.substring(0, 2), 16);
+                int g = Integer.parseInt(clean.substring(2, 4), 16);
+                int b = Integer.parseInt(clean.substring(4, 6), 16);
+                return new Color(r, g, b);
+            }
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     private static Color interpolateColor(List<Color> colors, float progress) {
+        if (colors == null || colors.isEmpty()) return null;
+        if (colors.size() == 1) return colors.getFirst();
         float clampedProgress = Math.max(0f, Math.min(1f, progress));
         float scaledProgress = clampedProgress * (colors.size() - 1);
         int index = Math.min((int) scaledProgress, colors.size() - 2);

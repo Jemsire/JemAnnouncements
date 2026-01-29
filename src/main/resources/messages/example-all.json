@@ -2,10 +2,10 @@
   "Enabled": true,
   "Center": true,
   "ChatMessages": [
-    "<aqua><bold>---[Complete Example]---</bold></aqua>",
-    "<yellow>This is a complete announcement example!</yellow>",
+    "<aqua><b>---[Complete Example]---</b></aqua>",
+    "<offset:-1><e>This is a complete announcement example!</e>",
     "<gray>It includes all available message types.</gray>",
-    "<green>You can use any combination you want!</green>",
+    "<offset:2><green>You can use any combination you want!</green>",
     "-------------------------------------"
   ],
   "Notification": {

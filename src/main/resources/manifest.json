@@ -1,7 +1,7 @@
 {
   "Group": "Jemsire",
   "Name": "JemAnnouncements",
-  "Version": "1.0.3",
+  "Version": "1.1.0",
   "Description": "Automated announcement system with support for chat, action bar, title, and sound messages",
   "Authors": [
     {

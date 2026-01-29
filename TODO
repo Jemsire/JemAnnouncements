@@ -1,0 +1,6 @@
+TODO
+Rework command classes to use proper command system. - https://www.youtube.com/watch?v=KnmhG9MDMgo
+Add help and list arguments to announce command to allow for easier lists and info
+Add a main jema command that does the same as the other commands kinda combining them all together.
+
+Editor UI

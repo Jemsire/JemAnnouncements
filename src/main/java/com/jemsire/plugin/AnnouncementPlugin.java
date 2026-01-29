@@ -17,6 +17,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,8 @@ public class AnnouncementPlugin extends JavaPlugin {
 
     private final Config<AnnouncementConfig> announcementConfig;
     private final Map<String, Config<AnnouncementMessage>> messageConfigs = new HashMap<>();
+    /** Messages loaded from new .json files at reload (withConfig cannot be called after setup) */
+    private final Map<String, AnnouncementMessage> dynamicMessageConfigs = new HashMap<>();
 
     public AnnouncementPlugin(@Nonnull JavaPluginInit init) {
         super(init);
@@ -196,9 +199,64 @@ public class AnnouncementPlugin extends JavaPlugin {
     }
 
     /**
-     * Gets all registered message configs
+     * Gets all registered message configs (from constructor / before setup)
      */
     public Map<String, Config<AnnouncementMessage>> getMessageConfigs() {
         return messageConfigs;
+    }
+
+    /**
+     * Gets messages loaded from new .json files at reload (withConfig cannot be called after setup).
+     */
+    public Map<String, AnnouncementMessage> getDynamicMessageConfigs() {
+        return dynamicMessageConfigs;
+    }
+
+    /**
+     * Re-scans the messages directory and loads any new .json files manually (without withConfig).
+     * withConfig() can only be run before setup, so new files added after startup are loaded via JSON parsing.
+     */
+    public void discoverAndRegisterNewMessageConfigs() {
+        dynamicMessageConfigs.clear();
+        try {
+            File pluginDataDir = this.getDataDirectory().toFile();
+            File messagesDir = new File(pluginDataDir, "messages");
+            if (!messagesDir.exists()) {
+                return;
+            }
+
+            List<File> messageFiles = new java.util.ArrayList<>();
+            try (Stream<Path> paths = Files.walk(messagesDir.toPath())) {
+                paths.filter(Files::isRegularFile)
+                        .filter(path -> path.toString().toLowerCase().endsWith(".json"))
+                        .map(Path::toFile)
+                        .forEach(messageFiles::add);
+            }
+
+            for (File messageFile : messageFiles) {
+                String fileName = messageFile.getName();
+                String configName = fileName.substring(0, fileName.lastIndexOf('.'));
+                if (messageConfigs.containsKey(configName)) {
+                    continue;
+                }
+                try {
+                    String json = Files.readString(messageFile.toPath(), StandardCharsets.UTF_8);
+                    AnnouncementMessage message = AnnouncementMessage.fromJson(json);
+                    if (message != null) {
+                        dynamicMessageConfigs.put(configName, message);
+                        Logger.info("Loaded new message file on reload: " + configName);
+                    } else {
+                        Logger.warning("Failed to parse new message file: " + configName);
+                    }
+                } catch (Exception e) {
+                    Logger.warning("Could not load new message file " + configName + ": " + e.getMessage());
+                }
+            }
+            if (!dynamicMessageConfigs.isEmpty()) {
+                Logger.info("Loaded " + dynamicMessageConfigs.size() + " new message file(s) on reload");
+            }
+        } catch (Exception e) {
+            Logger.warning("Failed to discover new message files on reload: " + e.getMessage());
+        }
     }
 }

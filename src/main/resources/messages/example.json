@@ -2,10 +2,10 @@
   "Enabled": true,
   "Center": true,
   "ChatMessages": [
-    "<aqua><bold>---[JemAnnouncements]---</bold></aqua>",
-    "<yellow>This is an example announcement message!</yellow>",
+    "<aqua><b>---[JemAnnouncements]---</b></aqua>",
+    "<offset:-2><e>This is an example announcement message!</e>",
     "<gray>Change me in the example.json config!</gray>",
-    "<red>You can add prefix and suffix lines directly in ChatMessages!</red>",
+    "<offset:3><red>You can add prefix and suffix lines directly in ChatMessages!</red>",
     "-------------------------------------"
   ],
   "Notification": {

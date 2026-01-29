@@ -104,9 +104,9 @@ public class ColorUtils {
     
     // Pattern for hex colors: #RRGGBB or #RGB
     private static final Pattern HEX_PATTERN = Pattern.compile("&#([0-9A-Fa-f]{6})|#([0-9A-Fa-f]{6})|#([0-9A-Fa-f]{3})");
-    
-    // Pattern for &x&R&R&G&G&B&B format
-    private static final Pattern HEX_LEGACY_PATTERN = Pattern.compile("&x(&[0-9A-Fa-f]){6}");
+
+    // Pattern for <offset:N> centering adjustment (e.g. <offset:5> add spaces, <offset:-2> remove spaces)
+    private static final Pattern OFFSET_TAG_PATTERN = Pattern.compile("<offset:(-?\\d+)>", Pattern.CASE_INSENSITIVE);
     
     /**
      * Converts a string with color codes to a Color object.
@@ -246,40 +246,55 @@ public class ColorUtils {
     }
     
     /**
-     * Converts legacy & color codes to TinyMsg tags for backward compatibility
-     * @param text The text with legacy & codes
-     * @return The text with TinyMsg tags
+     * Converts legacy & color codes to TinyMsg tags for backward compatibility.
+     * Outputs tags compatible with TinyMessage API: &lt;color:name&gt;, &lt;b&gt;, &lt;i&gt;, &lt;u&gt;, &lt;reset&gt;, &lt;color:#RRGGBB&gt; for hex.
+     * @param text The text with legacy & codes (e.g. &a, &l, &#RRGGBB, &x&R&G&B)
+     * @return The text with TinyMsg tags for TinyMsg.parse()
      */
     public static String convertLegacyColorCodes(String text) {
-        if (text == null || !text.contains("&")) {
+        if (text == null) {
             return text;
+        }
+        // First convert hex patterns so we don't confuse them with single-char codes
+        String s = text;
+        // &#RRGGBB -> <color:#RRGGBB>
+        s = s.replaceAll("&#([0-9A-Fa-f]{6})", "<color:#$1>");
+        // &x&R&R&G&G&B&B -> <color:#RRGGBB>
+        Matcher hexLegacy = Pattern.compile("&x(&[0-9A-Fa-f]){6}").matcher(s);
+        StringBuffer hexRepl = new StringBuffer();
+        while (hexLegacy.find()) {
+            String match = hexLegacy.group();
+            // match is "&x&R&R&G&G&B&B" - hex digits at indices 3,5,7,9,11,13
+            String hex = "" + match.charAt(3) + match.charAt(5) + match.charAt(7) + match.charAt(9) + match.charAt(11) + match.charAt(13);
+            hexLegacy.appendReplacement(hexRepl, Matcher.quoteReplacement("<color:#" + hex + ">"));
+        }
+        hexLegacy.appendTail(hexRepl);
+        s = hexRepl.toString();
+
+        if (!s.contains("&")) {
+            return s;
         }
 
         StringBuilder result = new StringBuilder();
-        char[] chars = text.toCharArray();
+        char[] chars = s.toCharArray();
 
         for (int i = 0; i < chars.length; i++) {
             if (chars[i] == '&' && i + 1 < chars.length) {
                 char code = Character.toLowerCase(chars[i + 1]);
 
                 if (CODE_TO_COLOR_NAME.containsKey(code)) {
-                    result.append("<").append(CODE_TO_COLOR_NAME.get(code)).append(">");
-                    i++; // Skip the code character
+                    result.append("<color:").append(CODE_TO_COLOR_NAME.get(code)).append(">");
+                    i++;
                 } else if (CODE_TO_STYLE_NAME.containsKey(code)) {
                     String style = CODE_TO_STYLE_NAME.get(code);
-                    if (style.equals("reset")) {
-                        result.append("<reset>");
-                    } else if (style.equals("bold")) {
-                        result.append("<bold>");
-                    } else if (style.equals("underline")) {
-                        result.append("<underline>");
-                    } else if (style.equals("italic")) {
-                        result.append("<italic>");
+                    switch (style) {
+                        case "reset" -> result.append("<reset>");
+                        case "bold" -> result.append("<b>");
+                        case "underline" -> result.append("<u>");
+                        case "italic" -> result.append("<i>");
                     }
-                    // Skip obfuscated and strikethrough as they're not directly supported
-                    i++; // Skip the code character
+                    i++;
                 } else {
-                    // Unknown code, keep as-is
                     result.append(chars[i]);
                 }
             } else {
@@ -291,8 +306,42 @@ public class ColorUtils {
     }
     
     /**
+     * Returns the offset value from the first &lt;offset:N&gt; tag in the text. One offset per message line:
+     * positive = add more leading spaces (shift right), negative = fewer spaces (shift left).
+     * Additional offset tags on the same line are ignored; each chat line gets its own single offset.
+     * @param text The text that may contain one &lt;offset:N&gt; tag
+     * @return The N value, or 0 if none or invalid
+     */
+    public static int getOffset(String text) {
+        if (text == null || !text.contains("offset")) {
+            return 0;
+        }
+        Matcher m = OFFSET_TAG_PATTERN.matcher(text);
+        if (m.find()) {
+            try {
+                return Integer.parseInt(m.group(1));
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * Removes all &lt;offset:N&gt; tags from text. Call before centering and before TinyMsg.parse
+     * so the tags are not displayed and not counted as visible width.
+     * @param text The text that may contain &lt;offset:N&gt; tags
+     * @return The text with all &lt;offset:N&gt; tags removed
+     */
+    public static String stripOffsetTags(String text) {
+        if (text == null) {
+            return text;
+        }
+        return OFFSET_TAG_PATTERN.matcher(text).replaceAll("");
+    }
+
+    /**
      * Strips all color codes and formatting tags from text
-     * Removes both TinyMsg tags and legacy & color codes
+     * Removes TinyMsg tags, legacy & codes, and hex (#RRGGBB, &#RRGGBB, &x&R&G&B)
      * @param text The text to strip
      * @return The plain text without any formatting
      */
@@ -300,12 +349,75 @@ public class ColorUtils {
         if (text == null || text.isEmpty()) {
             return text;
         }
-        
         // Strip TinyMsg tags (<tag> and </tag>) - case insensitive
-        String withoutTags = text.replaceAll("(?i)<[^>]+>", "");
-        
-        // Strip legacy & color codes (e.g., &a, &l, &r) - case insensitive
-        // Matches & followed by 0-9, a-f, k, l, m, n, o, r
-        return withoutTags.replaceAll("(?i)&[0-9a-fk-or]", "");
+        String s = text.replaceAll("(?i)<[^>]+>", "");
+        // Strip legacy & single-char codes (e.g., &a, &l, &r)
+        s = s.replaceAll("(?i)&[0-9a-fk-or]", "");
+        // Strip hex: &#RRGGBB and &x&R&R&G&G&B&B (legacy hex)
+        s = s.replaceAll("&#[0-9A-Fa-f]{6}", "");
+        s = s.replaceAll("&x(&[0-9A-Fa-f]){6}", "");
+        // Strip standalone #RRGGBB and #RGB (so they are not counted as visible length)
+        s = s.replaceAll("#[0-9A-Fa-f]{6}", "");
+        s = s.replaceAll("#[0-9A-Fa-f]{3}", "");
+        return s;
+    }
+
+    /**
+     * Returns the visible character count for centering. Counts only visible characters;
+     * tags and color codes are skipped. Used with center width 80: spaces = (80 - count) / 2.
+     */
+    public static int getVisibleWidthForCentering(String text) {
+        if (text == null || text.isEmpty()) {
+            return 0;
+        }
+        int width = 0;
+        int i = 0;
+        while (i < text.length()) {
+            if (text.charAt(i) == '<') {
+                int end = text.indexOf('>', i + 1);
+                if (end == -1) {
+                    width++;
+                    i++;
+                    continue;
+                }
+                i = end + 1;
+                continue;
+            }
+            if (text.charAt(i) == '&' && i + 1 < text.length()) {
+                char c = Character.toLowerCase(text.charAt(i + 1));
+                boolean singleCode = (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || c == 'k' || c == 'l' || c == 'm' || c == 'n' || c == 'o' || c == 'r';
+                if (singleCode) {
+                    i += 2;
+                    continue;
+                }
+                if (c == '#' && i + 8 <= text.length()) {
+                    String hex = text.substring(i + 2, i + 8);
+                    if (hex.matches("[0-9A-Fa-f]{6}")) {
+                        i += 8;
+                        continue;
+                    }
+                }
+                if (c == 'x' && i + 12 <= text.length()) {
+                    String rest = text.substring(i, i + 12);
+                    if (rest.matches("(?i)&x(&[0-9a-f]){6}")) {
+                        i += 12;
+                        continue;
+                    }
+                }
+            }
+            if (text.charAt(i) == '#') {
+                int hexEnd = i + 1;
+                while (hexEnd < text.length() && hexEnd - i <= 7 && (Character.isDigit(text.charAt(hexEnd)) || "abcdefABCDEF".indexOf(text.charAt(hexEnd)) >= 0)) {
+                    hexEnd++;
+                }
+                if (hexEnd - i == 7 || hexEnd - i == 4) {
+                    i = hexEnd;
+                    continue;
+                }
+            }
+            width++;
+            i++;
+        }
+        return width;
     }
 }
