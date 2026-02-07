@@ -3,7 +3,6 @@ plugins {
 }
 
 group = "com.jemsire"
-val hytaleVersion = "2026.01.24-6e2d4fc36"
 
 // Read version from manifest.json
 val manifestFile = file("src/main/resources/manifest.json")
@@ -21,12 +20,14 @@ project.version = version
 
 repositories {
     mavenCentral()
-    maven("https://maven.hytale.com/release")
+    maven {
+        name = "hytale"
+        url = uri("https://maven.hytale.com/release") // Or "hytale-pre-release" for pre-release versions
+    }
 }
 
 dependencies {
-    //compileOnly(files("libs/HytaleServer.jar"))
-    compileOnly("com.hypixel.hytale:Server:${hytaleVersion}")
+    implementation("com.hypixel.hytale:Server:+")
     implementation("com.google.code.gson:gson:2.10.1")
 
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
