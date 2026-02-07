@@ -5,7 +5,6 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -31,7 +30,7 @@ public class UpdateChecker {
                 checkForUpdates();
             } catch (Exception e) {
                 // Silently fail - update checking shouldn't break the plugin
-                Logger.log("Update check failed: " + e.getMessage(), Level.WARNING);
+                Logger.warning("Update check failed: " + e.getMessage());
             }
         });
         updateThread.setName("JemAnnouncements-UpdateChecker");

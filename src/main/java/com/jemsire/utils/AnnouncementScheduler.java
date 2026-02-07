@@ -15,6 +15,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Handles both sequential and random ordering.
  */
 public class AnnouncementScheduler {
+    private AnnouncementScheduler() {
+        throw new UnsupportedOperationException("Utility class");
+    }
     private static ScheduledExecutorService scheduler;
     private static ScheduledFuture<?> scheduledTask;
     private static final AtomicInteger sequentialIndex = new AtomicInteger(0);
@@ -139,9 +142,9 @@ public class AnnouncementScheduler {
             
             if (message != null) {
                 String orderType = config.isRandom() ? "random" : "sequential";
-                Logger.info("Sending announcement message (order: " + orderType + ")");
+                Logger.debug("Sending announcement message (order: " + orderType + ")");
                 MessageSender.sendAnnouncement(message);
-                Logger.info("Announcement sent successfully");
+                Logger.debug("Announcement sent successfully");
             } else {
                 Logger.warning("Failed to get announcement message");
             }

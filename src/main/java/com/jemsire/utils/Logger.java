@@ -12,6 +12,10 @@ import java.util.logging.Level;
 public class Logger {
     private static HytaleLogger logger;
 
+    private Logger() {
+        throw new UnsupportedOperationException("Utility class");
+    }
+
     /**
      * Gets the logger instance, initializing if necessary
      */
@@ -31,6 +35,10 @@ public class Logger {
      * @param level The log level
      */
     public static void log(String message, Level level) {
+        if (shouldLog(level)) {
+            return;
+        }
+
         HytaleLogger loggerInstance = getLogger();
         if (loggerInstance != null) {
             loggerInstance.at(level).log(message);
@@ -41,10 +49,45 @@ public class Logger {
     }
 
     /**
+     * Determines if a message should be logged based on the configured log level
+     */
+    private static boolean shouldLog(Level level) {
+        AnnouncementPlugin plugin = AnnouncementPlugin.get();
+        if (plugin == null) {
+            return false; // Log everything if plugin not yet available
+        }
+
+        String configuredLevel = "INFO";
+        try {
+            configuredLevel = plugin.getAnnouncementConfig().get().getLogLevel().toUpperCase();
+        } catch (Exception e) {
+            // Use default if config not available
+        }
+
+        if (configuredLevel.equals("NONE")) {
+            return level.intValue() < Level.SEVERE.intValue(); // Always log errors
+        }
+
+        if (configuredLevel.equals("DEBUG")) {
+            return false; // Log everything
+        }
+
+        // Default: INFO
+        return level.intValue() < Level.INFO.intValue();
+    }
+
+    /**
      * Logs an info message
      */
     public static void info(String message) {
         log(message, Level.INFO);
+    }
+
+    /**
+     * Logs a debug message
+     */
+    public static void debug(String message) {
+        log(message, Level.FINE);
     }
 
     /**
@@ -65,12 +108,17 @@ public class Logger {
      * Logs a severe/error message with exception
      */
     public static void severe(String message, Throwable throwable) {
+        if (shouldLog(Level.SEVERE)) {
+            return;
+        }
+
         HytaleLogger loggerInstance = getLogger();
         if (loggerInstance != null) {
             loggerInstance.at(Level.SEVERE).log(message + ": " + throwable.getMessage());
+            // We still use printStackTrace for detailed debugging in console if needed
             throwable.printStackTrace();
         } else {
-            System.err.println("[SEVERE] " + message);
+            System.err.println("[SEVERE] " + message + ": " + throwable.getMessage());
             throwable.printStackTrace();
         }
     }

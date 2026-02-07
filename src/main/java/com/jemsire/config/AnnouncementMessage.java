@@ -111,30 +111,29 @@ public class AnnouncementMessage {
             msg.enabled = !root.has("Enabled") || root.get("Enabled").isJsonNull() || root.get("Enabled").getAsBoolean();
             if (root.has("Notification") && root.get("Notification").isJsonObject()) {
                 JsonObject n = root.getAsJsonObject("Notification");
-                NotificationConfig nc = new NotificationConfig();
-                nc.title = n.has("Title") && !n.get("Title").isJsonNull() ? n.get("Title").getAsString() : "";
-                nc.subtitle = n.has("Subtitle") && !n.get("Subtitle").isJsonNull() ? n.get("Subtitle").getAsString() : "";
-                nc.icon = n.has("Icon") && !n.get("Icon").isJsonNull() ? n.get("Icon").getAsString() : null;
-                msg.notification = nc;
+                String title = n.has("Title") && !n.get("Title").isJsonNull() ? n.get("Title").getAsString() : "";
+                String subtitle = n.has("Subtitle") && !n.get("Subtitle").isJsonNull() ? n.get("Subtitle").getAsString() : "";
+                String icon = n.has("Icon") && !n.get("Icon").isJsonNull() ? n.get("Icon").getAsString() : null;
+                msg.notification = new NotificationConfig(title, subtitle, icon);
+                com.jemsire.utils.Logger.debug("Manually parsed notification: title=" + title + ", subtitle=" + subtitle);
             }
             if (root.has("Title") && root.get("Title").isJsonObject()) {
                 JsonObject t = root.getAsJsonObject("Title");
-                TitleConfig tc = new TitleConfig();
-                tc.title = t.has("Title") && !t.get("Title").isJsonNull() ? t.get("Title").getAsString() : "";
-                tc.subtitle = t.has("Subtitle") && !t.get("Subtitle").isJsonNull() ? t.get("Subtitle").getAsString() : "";
-                tc.isMajor = t.has("IsMajor") && !t.get("IsMajor").isJsonNull() && t.get("IsMajor").getAsBoolean();
-                tc.fadeIn = t.has("FadeIn") && !t.get("FadeIn").isJsonNull() ? t.get("FadeIn").getAsFloat() : 0.25f;
-                tc.stay = t.has("Stay") && !t.get("Stay").isJsonNull() ? t.get("Stay").getAsFloat() : 5.0f;
-                tc.fadeOut = t.has("FadeOut") && !t.get("FadeOut").isJsonNull() ? t.get("FadeOut").getAsFloat() : 0.25f;
-                msg.title = tc;
+                String title = t.has("Title") && !t.get("Title").isJsonNull() ? t.get("Title").getAsString() : "";
+                String subtitle = t.has("Subtitle") && !t.get("Subtitle").isJsonNull() ? t.get("Subtitle").getAsString() : "";
+                boolean isMajor = t.has("IsMajor") && !t.get("IsMajor").isJsonNull() && t.get("IsMajor").getAsBoolean();
+                float fadeIn = t.has("FadeIn") && !t.get("FadeIn").isJsonNull() ? t.get("FadeIn").getAsFloat() : 0.25f;
+                float stay = t.has("Stay") && !t.get("Stay").isJsonNull() ? t.get("Stay").getAsFloat() : 5.0f;
+                float fadeOut = t.has("FadeOut") && !t.get("FadeOut").isJsonNull() ? t.get("FadeOut").getAsFloat() : 0.25f;
+                msg.title = new TitleConfig(title, subtitle, isMajor, fadeIn, stay, fadeOut);
+                com.jemsire.utils.Logger.debug("Manually parsed title: title=" + title + ", subtitle=" + subtitle);
             }
             if (root.has("Sound") && root.get("Sound").isJsonObject()) {
                 JsonObject s = root.getAsJsonObject("Sound");
-                SoundConfig sc = new SoundConfig();
-                sc.soundName = s.has("SoundName") && !s.get("SoundName").isJsonNull() ? s.get("SoundName").getAsString() : "";
-                sc.volume = s.has("Volume") && !s.get("Volume").isJsonNull() ? s.get("Volume").getAsFloat() : 1.0f;
-                sc.pitch = s.has("Pitch") && !s.get("Pitch").isJsonNull() ? s.get("Pitch").getAsFloat() : 1.0f;
-                msg.sound = sc;
+                String soundName = s.has("SoundName") && !s.get("SoundName").isJsonNull() ? s.get("SoundName").getAsString() : "";
+                float volume = s.has("Volume") && !s.get("Volume").isJsonNull() ? s.get("Volume").getAsFloat() : 1.0f;
+                float pitch = s.has("Pitch") && !s.get("Pitch").isJsonNull() ? s.get("Pitch").getAsFloat() : 1.0f;
+                msg.sound = new SoundConfig(soundName, volume, pitch);
             }
             return msg;
         } catch (Exception e) {
@@ -146,15 +145,15 @@ public class AnnouncementMessage {
         return chatMessages;
     }
 
-    public NotificationConfig getNotification() {
+    public NotificationConfig notification() {
         return notification;
     }
 
-    public TitleConfig getTitle() {
+    public TitleConfig title() {
         return title;
     }
 
-    public SoundConfig getSound() {
+    public SoundConfig sound() {
         return sound;
     }
 
@@ -190,31 +189,42 @@ public class AnnouncementMessage {
      * Notification configuration for notification messages (similar to item pickup notifications)
      */
     public static class NotificationConfig {
-        private String title = ""; // Primary message
-        private String subtitle = ""; // Secondary message (optional)
-        private String icon = null; // Item icon (optional, e.g., "Weapon_Sword_Mithril")
+        private String title;
+        private String subtitle;
+        private String icon;
 
-        public NotificationConfig() {
+        public NotificationConfig() {}
+
+        public NotificationConfig(String title, String subtitle, String icon) {
+            this.title = title;
+            this.subtitle = subtitle;
+            this.icon = icon;
         }
 
         public static final BuilderCodec<NotificationConfig> CODEC =
                 BuilderCodec.builder(NotificationConfig.class, NotificationConfig::new)
                         .append(
-                                new KeyedCodec<String>("Title", Codec.STRING),
-                                (config, value, info) -> config.title = value != null ? value : "",
+                                new KeyedCodec<>("Title", Codec.STRING),
+                                (config, value, info) -> {
+                                    config.title = value;
+                                    com.jemsire.utils.Logger.debug("NotificationCodec: title=" + value);
+                                },
                                 (config, info) -> config.title
                         )
                         .add()
 
                         .append(
-                                new KeyedCodec<String>("Subtitle", Codec.STRING),
-                                (config, value, info) -> config.subtitle = value != null ? value : "",
+                                new KeyedCodec<>("Subtitle", Codec.STRING),
+                                (config, value, info) -> {
+                                    config.subtitle = value;
+                                    com.jemsire.utils.Logger.debug("NotificationCodec: subtitle=" + value);
+                                },
                                 (config, info) -> config.subtitle
                         )
                         .add()
 
                         .append(
-                                new KeyedCodec<String>("Icon", Codec.STRING),
+                                new KeyedCodec<>("Icon", Codec.STRING),
                                 (config, value, info) -> config.icon = value,
                                 (config, info) -> config.icon
                         )
@@ -222,17 +232,9 @@ public class AnnouncementMessage {
 
                         .build();
 
-        public String getTitle() {
-            return title;
-        }
-
-        public String getSubtitle() {
-            return subtitle;
-        }
-
-        public String getIcon() {
-            return icon;
-        }
+        public String title() { return title; }
+        public String subtitle() { return subtitle; }
+        public String icon() { return icon; }
 
         public boolean hasIcon() {
             return icon != null && !icon.isEmpty();
@@ -243,55 +245,69 @@ public class AnnouncementMessage {
      * Title configuration for title/subtitle messages
      */
     public static class TitleConfig {
-        private String title = "";
-        private String subtitle = "";
-        private boolean isMajor = false; // If true, adds a gold border around the title
-        private float fadeIn = 0.25f; // Seconds
-        private float stay = 5.0f; // Seconds
-        private float fadeOut = 0.25f; // Seconds
+        private String title;
+        private String subtitle;
+        private boolean isMajor;
+        private float fadeIn;
+        private float stay;
+        private float fadeOut;
 
-        public TitleConfig() {
+        public TitleConfig() {}
+
+        public TitleConfig(String title, String subtitle, boolean isMajor, float fadeIn, float stay, float fadeOut) {
+            this.title = title;
+            this.subtitle = subtitle;
+            this.isMajor = isMajor;
+            this.fadeIn = fadeIn;
+            this.stay = stay;
+            this.fadeOut = fadeOut;
         }
 
         public static final BuilderCodec<TitleConfig> CODEC =
                 BuilderCodec.builder(TitleConfig.class, TitleConfig::new)
                         .append(
-                                new KeyedCodec<String>("Title", Codec.STRING),
-                                (config, value, info) -> config.title = value != null ? value : "",
+                                new KeyedCodec<>("Title", Codec.STRING),
+                                (config, value, info) -> {
+                                    config.title = value;
+                                    com.jemsire.utils.Logger.debug("TitleCodec: title=" + value);
+                                },
                                 (config, info) -> config.title
                         )
                         .add()
 
                         .append(
-                                new KeyedCodec<String>("Subtitle", Codec.STRING),
-                                (config, value, info) -> config.subtitle = value != null ? value : "",
+                                new KeyedCodec<>("Subtitle", Codec.STRING),
+                                (config, value, info) -> {
+                                    config.subtitle = value;
+                                    com.jemsire.utils.Logger.debug("TitleCodec: subtitle=" + value);
+                                },
                                 (config, info) -> config.subtitle
                         )
                         .add()
 
                         .append(
-                                new KeyedCodec<Boolean>("IsMajor", Codec.BOOLEAN),
+                                new KeyedCodec<>("IsMajor", Codec.BOOLEAN),
                                 (config, value, info) -> config.isMajor = value != null ? value : false,
                                 (config, info) -> config.isMajor
                         )
                         .add()
 
                         .append(
-                                new KeyedCodec<Float>("FadeIn", Codec.FLOAT),
+                                new KeyedCodec<>("FadeIn", Codec.FLOAT),
                                 (config, value, info) -> config.fadeIn = value != null ? value : 0.25f,
                                 (config, info) -> config.fadeIn
                         )
                         .add()
 
                         .append(
-                                new KeyedCodec<Float>("Stay", Codec.FLOAT),
+                                new KeyedCodec<>("Stay", Codec.FLOAT),
                                 (config, value, info) -> config.stay = value != null ? value : 5.0f,
                                 (config, info) -> config.stay
                         )
                         .add()
 
                         .append(
-                                new KeyedCodec<Float>("FadeOut", Codec.FLOAT),
+                                new KeyedCodec<>("FadeOut", Codec.FLOAT),
                                 (config, value, info) -> config.fadeOut = value != null ? value : 0.25f,
                                 (config, info) -> config.fadeOut
                         )
@@ -299,60 +315,48 @@ public class AnnouncementMessage {
 
                         .build();
 
-        public String getTitle() {
-            return title;
-        }
-
-        public String getSubtitle() {
-            return subtitle;
-        }
-
-        public boolean isMajor() {
-            return isMajor;
-        }
-
-        public float getFadeIn() {
-            return fadeIn;
-        }
-
-        public float getStay() {
-            return stay;
-        }
-
-        public float getFadeOut() {
-            return fadeOut;
-        }
+        public String title() { return title; }
+        public String subtitle() { return subtitle; }
+        public boolean isMajor() { return isMajor; }
+        public float fadeIn() { return fadeIn; }
+        public float stay() { return stay; }
+        public float fadeOut() { return fadeOut; }
     }
 
     /**
      * Sound configuration for playing sounds with announcements
      */
     public static class SoundConfig {
-        private String soundName = "";
-        private float volume = 1.0f;
-        private float pitch = 1.0f;
+        private String soundName;
+        private float volume;
+        private float pitch;
 
-        public SoundConfig() {
+        public SoundConfig() {}
+
+        public SoundConfig(String soundName, float volume, float pitch) {
+            this.soundName = soundName;
+            this.volume = volume;
+            this.pitch = pitch;
         }
 
         public static final BuilderCodec<SoundConfig> CODEC =
                 BuilderCodec.builder(SoundConfig.class, SoundConfig::new)
                         .append(
-                                new KeyedCodec<String>("SoundName", Codec.STRING),
-                                (config, value, info) -> config.soundName = value != null ? value : "",
+                                new KeyedCodec<>("SoundName", Codec.STRING),
+                                (config, value, info) -> config.soundName = value,
                                 (config, info) -> config.soundName
                         )
                         .add()
 
                         .append(
-                                new KeyedCodec<Float>("Volume", Codec.FLOAT),
+                                new KeyedCodec<>("Volume", Codec.FLOAT),
                                 (config, value, info) -> config.volume = value != null ? value : 1.0f,
                                 (config, info) -> config.volume
                         )
                         .add()
 
                         .append(
-                                new KeyedCodec<Float>("Pitch", Codec.FLOAT),
+                                new KeyedCodec<>("Pitch", Codec.FLOAT),
                                 (config, value, info) -> config.pitch = value != null ? value : 1.0f,
                                 (config, info) -> config.pitch
                         )
@@ -360,16 +364,8 @@ public class AnnouncementMessage {
 
                         .build();
 
-        public String getSoundName() {
-            return soundName;
-        }
-
-        public float getVolume() {
-            return volume;
-        }
-
-        public float getPitch() {
-            return pitch;
-        }
+        public String soundName() { return soundName; }
+        public float volume() { return volume; }
+        public float pitch() { return pitch; }
     }
 }

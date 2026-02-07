@@ -18,7 +18,8 @@ A Hytale server plugin that provides an automated announcement system with suppo
 - **Multiple Message Files**: Create unlimited announcement messages as separate JSON files
 - **Rich Formatting**: Support for hex, rgb, legacy color(`&` codes), and TinyMsg tags
 - **Hot Reload**: Reload configuration and messages without restarting the server using `/announce-reload`
-- **Manual Triggering**: Manually trigger any announcement by name using `/announce <message-name>`
+- **Manual Triggering**: Manually trigger any announcement by name using `/announce <message-name>`. For messages in subfolders, use the relative path (e.g., `/announce example/example-chat`).
+- **Folder Support**: Organize your message files into subfolders for better management
 - **Update Check**: Check GitHub releases for updates and notifies you if there is one
 - **Example Templates**: Automatically generates example message templates on first launch
 
@@ -54,7 +55,9 @@ The main configuration file is located at `Jemsire_JemAnnouncements/Announcement
 ```json
 {
   "IntervalSeconds": 300,
-  "Enable-Randomization": false,
+  "EnableRandomization": false,
+  "CreateExampleMessages": true,
+  "LogLevel": "INFO",
   "Version": 1
 }
 ```
@@ -62,20 +65,27 @@ The main configuration file is located at `Jemsire_JemAnnouncements/Announcement
 **Configuration Options:**
 
 - `IntervalSeconds`: Time in seconds between announcements (default: 300 = 5 minutes)
-- `Enable-Randomization`: Set to `true` for random message order, `false` for sequential order (default: false)
+- `EnableRandomization`: Set to `true` for random message order, `false` for sequential order (default: false)
+- `CreateExampleMessages`: If set to `true`, the plugin will automatically create example message files if none exist (default: true).
+- `LogLevel`: Controls the detail of plugin logs in the console.
+  - `"INFO"` (Default): Shows standard plugin information and errors.
+  - `"DEBUG"`: Shows detailed internal tracing, useful for troubleshooting message parsing and delivery.
+  - `"NONE"`: Disables all logs except for critical errors.
 - `Version`: Configuration version (currently 1)
 
 ### Message Configuration Files
 
-Each announcement message has its own configuration file in `Jemsire_JemAnnouncements/messages/`. Example templates are automatically created on first launch:
+Each announcement message has its own configuration file in `Jemsire_JemAnnouncements/messages/`. The plugin recursively scans this folder, allowing you to organize your messages into subfolders if desired.
 
-- `example.json` - Complete example with all message types
-- `example-chat.json` - Chat messages only
-- `example-notification.json` - Action bar notification only
-- `example-title.json` - Title message only
-- `example-sound.json` - Sound effect only
-- `example-all.json` - All message types combined
-- `example-no-center.json` - Example without message centering
+Example templates are automatically created on first launch in the `messages/example/` subfolder:
+
+- `example/example.json` - Complete example with all message types
+- `example/example-chat.json` - Chat messages only
+- `example/example-notification.json` - Action bar notification only
+- `example/example-title.json` - Title message only
+- `example/example-sound.json` - Sound effect only
+- `example/example-all.json` - All message types combined
+- `example/example-no-center.json` - Example without message centering
 
 #### Message Configuration Structure
 
@@ -295,8 +305,9 @@ The plugin supports TinyMsg tags, legacy `&` color codes, and centering offsets.
 The plugin follows a modular architecture:
 
 - **Main Plugin Class** (`AnnouncementPlugin.java`): Handles plugin initialization, configuration management, message discovery, and command registration
-- **Message Loader** (`MessageLoader.java`): Dynamically discovers and loads message files from the messages directory
+- **Message Loader** (`MessageLoader.java`): Dynamically discovers and loads message files from the messages directory (uses `CopyOnWriteArrayList` for thread-safe access)
 - **Announcement Scheduler** (`AnnouncementScheduler.java`): Manages scheduled announcements with configurable intervals and ordering
+- **Logger Utility** (`Logger.java`): Centralized logging system with configurable log levels (`INFO`, `DEBUG`, `NONE`)
 - **Message Sender** (`MessageSender.java`): Handles sending different message types (chat, notification, title, sound) to all players
 - **Configuration System**: Manages main config and individual message configs with hot reload support
 
@@ -306,8 +317,9 @@ The plugin follows a modular architecture:
 2. **Message Loading**: Each message file is loaded and validated
 3. **Scheduler Start**: Scheduler starts with configured interval and ordering mode
 4. **Message Selection**: Based on configuration, selects next message (sequential or random)
-5. **Message Sending**: Sends all enabled message types (chat, notification, title, sound) to all online players
-6. **Repeat**: Process repeats at configured intervals
+5. **Message Formatting**: Replaces placeholders like `{player}` with current player context (if applicable)
+6. **Message Sending**: Sends all enabled message types (chat, notification, title, sound) to all online players
+7. **Repeat**: Process repeats at configured intervals
 
 ### Message Types
 
@@ -335,8 +347,8 @@ The plugin follows a modular architecture:
 
 ### Message Ordering
 
-- **Sequential Mode** (`Enable-Randomization: false`): Messages are sent in the order they appear in the messages directory, cycling through all enabled messages
-- **Random Mode** (`Enable-Randomization: true`): Messages are selected randomly from all enabled messages
+- **Sequential Mode** (`EnableRandomization: false`): Messages are sent in the order they appear in the messages directory, cycling through all enabled messages
+- **Random Mode** (`EnableRandomization: true`): Messages are selected randomly from all enabled messages
 
 ### Priority System
 

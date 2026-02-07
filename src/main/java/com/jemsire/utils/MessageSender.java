@@ -25,6 +25,9 @@ import java.util.List;
  * Supports chat, action bar, title, and sound messages.
  */
 public class MessageSender {
+    private MessageSender() {
+        throw new UnsupportedOperationException("Utility class");
+    }
 
     /**
      * Sends an announcement message to all online players
@@ -50,28 +53,32 @@ public class MessageSender {
         // Get all online players
         List<PlayerRef> players = universe.getPlayers();
         if (players.isEmpty()) {
-            Logger.info("No players online, skipping announcement");
+            Logger.debug("No players online, skipping announcement");
             return; // No players online
         }
 
-        // Send chat messages if present
-        if (message.hasChatMessages()) {
-            sendChatMessages(players, message.getChatMessages(), message.isCenterChat());
-        }
+        try {
+            // Send chat messages if present
+            if (message.hasChatMessages()) {
+                sendChatMessages(players, message.getChatMessages(), message.isCenterChat());
+            }
 
-        // Send notification if present
-        if (message.hasNotification()) {
-            sendNotification(players, message.getNotification());
-        }
+            // Send notification if present
+            if (message.hasNotification()) {
+                sendNotification(players, message.notification());
+            }
 
-        // Send title if present
-        if (message.hasTitle()) {
-            sendTitle(players, message.getTitle());
-        }
+            // Send title if present
+            if (message.hasTitle()) {
+                sendTitle(players, message.title());
+            }
 
-        // Play sound if present
-        if (message.hasSound()) {
-            playSound(players, message.getSound());
+            // Play sound if present
+            if (message.hasSound()) {
+                playSound(players, message.sound());
+            }
+        } catch (Exception e) {
+            Logger.severe("Unexpected error in sendAnnouncement: " + e.getMessage(), e);
         }
     }
 
@@ -137,12 +144,17 @@ public class MessageSender {
      */
     private static void sendNotification(List<PlayerRef> players, AnnouncementMessage.NotificationConfig notificationConfig) {
         if (notificationConfig == null) {
+            Logger.debug("Skipping notification: notificationConfig is null");
             return;
         }
 
         // Parse title and subtitle using TinyMsg API
-        String processedTitle = ColorUtils.convertLegacyColorCodes(notificationConfig.getTitle());
-        String processedSubtitle = ColorUtils.convertLegacyColorCodes(notificationConfig.getSubtitle());
+        String title = notificationConfig.title();
+        String subtitle = notificationConfig.subtitle();
+        Logger.debug("Sending notification: title='" + title + "', subtitle='" + subtitle + "'");
+
+        String processedTitle = ColorUtils.convertLegacyColorCodes(title);
+        String processedSubtitle = ColorUtils.convertLegacyColorCodes(subtitle);
 
         Message titleMessage = TinyMsg.parse(processedTitle);
         Message subtitleMessage = processedSubtitle != null && !processedSubtitle.isEmpty()
@@ -153,7 +165,7 @@ public class MessageSender {
         ItemWithAllMetadata icon = null;
         if (notificationConfig.hasIcon()) {
             try {
-                icon = new ItemStack(notificationConfig.getIcon(), 1).toPacket();
+                icon = new ItemStack(notificationConfig.icon(), 1).toPacket();
             } catch (Exception e) {
                 Logger.warning("Failed to create icon for notification: " + e.getMessage());
                 // Continue without icon
@@ -181,11 +193,13 @@ public class MessageSender {
      */
     private static void sendTitle(List<PlayerRef> players, AnnouncementMessage.TitleConfig titleConfig) {
         if (titleConfig == null) {
+            Logger.debug("Skipping title: titleConfig is null");
             return;
         }
 
-        String titleText = titleConfig.getTitle();
-        String subtitleText = titleConfig.getSubtitle();
+        String titleText = titleConfig.title();
+        String subtitleText = titleConfig.subtitle();
+        Logger.debug("Sending title: title='" + titleText + "', subtitle='" + subtitleText + "'");
 
         // Parse title does not support color text.
         Message titleMessage;
@@ -216,9 +230,9 @@ public class MessageSender {
                         subtitleMessage,
                         titleConfig.isMajor(), // isMajor - adds gold border if true
                         null, // icon
-                        titleConfig.getStay(),
-                        titleConfig.getFadeIn(),
-                        titleConfig.getFadeOut()
+                        titleConfig.stay(),
+                        titleConfig.fadeIn(),
+                        titleConfig.fadeOut()
                 );
             } catch (Exception e) {
                 Logger.warning("Failed to send title to " + player.getUsername() + ": " + e.getMessage());
@@ -230,13 +244,13 @@ public class MessageSender {
      * Plays a sound to all players
      */
     private static void playSound(List<PlayerRef> players, AnnouncementMessage.SoundConfig soundConfig) {
-        if (soundConfig == null || soundConfig.getSoundName() == null || soundConfig.getSoundName().isEmpty()) {
+        if (soundConfig == null || soundConfig.soundName() == null || soundConfig.soundName().isEmpty()) {
             return;
         }
 
-        String soundName = soundConfig.getSoundName();
-        float volume = soundConfig.getVolume();
-        float pitch = soundConfig.getPitch();
+        String soundName = soundConfig.soundName();
+        float volume = soundConfig.volume();
+        float pitch = soundConfig.pitch();
 
         // Play sound to all players
         // Note: Hytale API may have a specific method for playing sounds

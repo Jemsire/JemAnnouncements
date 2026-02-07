@@ -5,6 +5,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class PlaceholderReplacer {
+    private PlaceholderReplacer() {
+        throw new UnsupportedOperationException("Utility class");
+    }
     // Match placeholders like {player}, {message}, etc.
     // Only matches simple identifiers (letters, numbers, underscores) to avoid matching JSON structure
     private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("\\{([a-zA-Z0-9_]+)\\}");

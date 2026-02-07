@@ -12,7 +12,6 @@ import com.jemsire.utils.Logger;
 import com.jemsire.utils.MessageLoader;
 
 import javax.annotation.Nonnull;
-import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -56,34 +55,41 @@ public class AnnouncementPlugin extends JavaPlugin {
      */
     private void discoverAndRegisterMessageConfigs() {
         try {
-            File pluginDataDir = this.getDataDirectory().toFile();
-            File messagesDir = new File(pluginDataDir, "messages");
+            Path messagesDir = this.getDataDirectory().resolve("messages");
 
             // Create messages directory if it doesn't exist
-            if (!messagesDir.exists()) {
-                messagesDir.mkdirs();
+            if (!Files.exists(messagesDir)) {
+                Files.createDirectories(messagesDir);
             }
 
-            // Create example templates if they don't exist
-            createExampleTemplates(messagesDir);
+            // Load main config to check for example creation
+            announcementConfig.load();
+            AnnouncementConfig configData = announcementConfig.get();
 
-            // Find all .json files in the messages directory
-            List<File> messageFiles = new java.util.ArrayList<>();
-            try (Stream<Path> paths = Files.walk(messagesDir.toPath())) {
+            // Create example templates if they don't exist and are enabled
+            if (configData != null && configData.isCreateExampleMessages()) {
+                createExampleTemplates(messagesDir);
+            }
+
+            // Find all .json files in the messages directory recursively
+            List<Path> messageFiles = new java.util.ArrayList<>();
+            try (Stream<Path> paths = Files.walk(messagesDir)) {
                 paths.filter(Files::isRegularFile)
                         .filter(path -> path.toString().toLowerCase().endsWith(".json"))
-                        .map(Path::toFile)
                         .forEach(messageFiles::add);
             }
 
             // Register config for each message file
-            for (File messageFile : messageFiles) {
-                String fileName = messageFile.getName();
-                String configName = fileName.substring(0, fileName.lastIndexOf('.'));
+            for (Path messageFile : messageFiles) {
+                // Get relative path from messages directory
+                Path relativePath = messagesDir.relativize(messageFile);
+                String pathString = relativePath.toString().replace("\\", "/");
+                String configPath = "messages/" + pathString.substring(0, pathString.lastIndexOf('.'));
+                String configName = pathString; // Use full relative path as key
 
                 // Register config using withConfig (must be in constructor)
                 Config<AnnouncementMessage> config = this.withConfig(
-                        "messages/" + configName,
+                        configPath,
                         AnnouncementMessage.CODEC
                 );
                 messageConfigs.put(configName, config);
@@ -97,9 +103,19 @@ public class AnnouncementPlugin extends JavaPlugin {
 
     /**
      * Creates example template message files if they don't exist
-     * Copies files from resources/messages/ to the plugin's messages directory
+     * Copies files from resources/messages/ to the plugin's messages/example directory
      */
-    private void createExampleTemplates(File messagesDir) {
+    private void createExampleTemplates(Path messagesDir) {
+        Path exampleDir = messagesDir.resolve("example");
+        try {
+            if (!Files.exists(exampleDir)) {
+                Files.createDirectories(exampleDir);
+            }
+        } catch (Exception e) {
+            Logger.warning("Failed to create example directory: " + e.getMessage());
+            return;
+        }
+
         // List of example files to copy from resources
         String[] exampleFiles = {
                 "example.json",
@@ -112,36 +128,35 @@ public class AnnouncementPlugin extends JavaPlugin {
         };
 
         for (String fileName : exampleFiles) {
-            copyExampleFileFromResources(messagesDir, fileName);
+            copyExampleFileFromResources(exampleDir, fileName);
         }
     }
 
     /**
      * Copies an example file from resources to the messages directory if it doesn't exist
      */
-    private void copyExampleFileFromResources(File messagesDir, String fileName) {
-        File targetFile = new File(messagesDir, fileName);
+    private void copyExampleFileFromResources(Path messagesDir, String fileName) {
+        Path targetFile = messagesDir.resolve(fileName);
 
         // Skip if file already exists
-        if (targetFile.exists()) {
+        if (Files.exists(targetFile)) {
             return;
         }
 
         try {
             // Read from resources
             String resourcePath = "messages/" + fileName;
-            InputStream resourceStream = getClass().getClassLoader().getResourceAsStream(resourcePath);
+            try (InputStream resourceStream = getClass().getClassLoader().getResourceAsStream(resourcePath)) {
+                if (resourceStream == null) {
+                    Logger.warning("Example file not found in resources: " + resourcePath);
+                    return;
+                }
 
-            if (resourceStream == null) {
-                Logger.warning("Example file not found in resources: " + resourcePath);
-                return;
+                // Copy to target location
+                Files.copy(resourceStream, targetFile, StandardCopyOption.REPLACE_EXISTING);
             }
 
-            // Copy to target location
-            Files.copy(resourceStream, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            resourceStream.close();
-
-            Logger.info("Created example message template: " + targetFile.getAbsolutePath());
+            Logger.info("Created example message template: " + targetFile.toAbsolutePath());
         } catch (Exception e) {
             Logger.warning("Failed to copy example template " + fileName + ": " + e.getMessage());
         }
@@ -178,6 +193,7 @@ public class AnnouncementPlugin extends JavaPlugin {
         announcementConfig.save();
         Logger.info("Config saved.");
 
+        instance = null;
         Logger.info("JemAnnouncements shutdown complete.");
     }
 
@@ -219,28 +235,30 @@ public class AnnouncementPlugin extends JavaPlugin {
     public void discoverAndRegisterNewMessageConfigs() {
         dynamicMessageConfigs.clear();
         try {
-            File pluginDataDir = this.getDataDirectory().toFile();
-            File messagesDir = new File(pluginDataDir, "messages");
-            if (!messagesDir.exists()) {
+            Path messagesDir = this.getDataDirectory().resolve("messages");
+            if (!Files.exists(messagesDir)) {
                 return;
             }
 
-            List<File> messageFiles = new java.util.ArrayList<>();
-            try (Stream<Path> paths = Files.walk(messagesDir.toPath())) {
+            List<Path> messageFiles = new java.util.ArrayList<>();
+            try (Stream<Path> paths = Files.walk(messagesDir)) {
                 paths.filter(Files::isRegularFile)
                         .filter(path -> path.toString().toLowerCase().endsWith(".json"))
-                        .map(Path::toFile)
                         .forEach(messageFiles::add);
             }
 
-            for (File messageFile : messageFiles) {
-                String fileName = messageFile.getName();
-                String configName = fileName.substring(0, fileName.lastIndexOf('.'));
+            for (Path messageFile : messageFiles) {
+                // Get relative path from messages directory
+                Path relativePath = messagesDir.relativize(messageFile);
+                String pathString = relativePath.toString().replace("\\", "/");
+                String configPath = "messages/" + pathString.substring(0, pathString.lastIndexOf('.'));
+                String configName = pathString; // Use full relative path as key
+
                 if (messageConfigs.containsKey(configName)) {
                     continue;
                 }
                 try {
-                    String json = Files.readString(messageFile.toPath(), StandardCharsets.UTF_8);
+                    String json = Files.readString(messageFile, StandardCharsets.UTF_8);
                     AnnouncementMessage message = AnnouncementMessage.fromJson(json);
                     if (message != null) {
                         dynamicMessageConfigs.put(configName, message);

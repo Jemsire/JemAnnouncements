@@ -46,14 +46,24 @@ public class AnnounceCommand extends CommandBase {
         // Get the message name from the required argument
         String messageName = context.get(messageNameArg);
 
-        // Remove .json extension if provided
-        String configKey = messageName;
+        // Normalize path separators and prepare search keys
+        String configKey = messageName.replace("\\", "/");
         if (configKey.endsWith(".json")) {
             configKey = configKey.substring(0, configKey.length() - 5);
         }
 
+        // We also want to check if they provided a key that corresponds to the filename without extension
+        // which matches our configKey if they are in the root.
+        // If they are in a subfolder, they should ideally provide the path, e.g. "example/example-all"
+        
         Map<String, Config<AnnouncementMessage>> messageConfigs = plugin.getMessageConfigs();
         Config<AnnouncementMessage> messageConfig = messageConfigs.get(configKey);
+        
+        // If not found, try adding .json to see if it matches our registration key (which includes .json)
+        if (messageConfig == null && !configKey.toLowerCase().endsWith(".json")) {
+            messageConfig = messageConfigs.get(configKey + ".json");
+        }
+        
         AnnouncementMessage message;
 
         if (messageConfig != null) {
@@ -67,6 +77,9 @@ public class AnnounceCommand extends CommandBase {
         } else {
             // Check dynamically loaded messages (new files added after startup)
             message = plugin.getDynamicMessageConfigs().get(configKey);
+            if (message == null && !configKey.toLowerCase().endsWith(".json")) {
+                message = plugin.getDynamicMessageConfigs().get(configKey + ".json");
+            }
         }
 
         if (message == null) {

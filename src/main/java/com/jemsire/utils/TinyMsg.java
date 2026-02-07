@@ -109,6 +109,7 @@ public final class TinyMsg {
     }
 
     private TinyMsg() {
+        throw new UnsupportedOperationException("Utility class");
     }
 
     /**

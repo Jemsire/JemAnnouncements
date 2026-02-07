@@ -4,6 +4,7 @@ import com.hypixel.hytale.server.core.util.Config;
 import com.jemsire.config.AnnouncementMessage;
 import com.jemsire.plugin.AnnouncementPlugin;
 
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.*;
 
 /**
@@ -11,7 +12,10 @@ import java.util.*;
  * Dynamically discovers and loads all .json files.
  */
 public class MessageLoader {
-    private static final List<AnnouncementMessage> loadedMessages = new ArrayList<>();
+    private MessageLoader() {
+        throw new UnsupportedOperationException("Utility class");
+    }
+    private static final List<AnnouncementMessage> loadedMessages = new CopyOnWriteArrayList<>();
     private static final Map<String, Config<AnnouncementMessage>> messageConfigs = new HashMap<>();
     
     /**
@@ -20,6 +24,7 @@ public class MessageLoader {
      */
     public static void loadMessages() {
         loadedMessages.clear();
+        messageConfigs.clear();
         
         AnnouncementPlugin plugin = AnnouncementPlugin.get();
         if (plugin == null) {
@@ -67,7 +72,11 @@ public class MessageLoader {
         }
         
         // Sort by priority (higher priority first)
-        loadedMessages.sort((a, b) -> Integer.compare(b.getPriority(), a.getPriority()));
+        List<AnnouncementMessage> sortedMessages = new ArrayList<>(loadedMessages);
+        sortedMessages.sort((a, b) -> Integer.compare(b.getPriority(), a.getPriority()));
+        
+        loadedMessages.clear();
+        loadedMessages.addAll(sortedMessages);
         
         Logger.info("Successfully loaded " + loadedCount + " message(s)");
     }
@@ -87,6 +96,7 @@ public class MessageLoader {
         
         // Clear current messages
         loadedMessages.clear();
+        messageConfigs.clear();
         
         Map<String, Config<AnnouncementMessage>> configs = plugin.getMessageConfigs();
         
@@ -126,7 +136,11 @@ public class MessageLoader {
         }
         
         // Sort by priority (higher priority first)
-        loadedMessages.sort((a, b) -> Integer.compare(b.getPriority(), a.getPriority()));
+        List<AnnouncementMessage> sortedMessages = new ArrayList<>(loadedMessages);
+        sortedMessages.sort((a, b) -> Integer.compare(b.getPriority(), a.getPriority()));
+        
+        loadedMessages.clear();
+        loadedMessages.addAll(sortedMessages);
         
         Logger.info("Successfully reloaded " + loadedCount + " message(s)");
     }

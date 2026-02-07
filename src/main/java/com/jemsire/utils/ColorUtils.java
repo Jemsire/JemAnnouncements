@@ -11,6 +11,9 @@ import java.util.regex.Pattern;
  * Supports both & color codes (like &a, &c) and hex colors (like #FF0000 or &x&F&F&0&0&0&0).
  */
 public class ColorUtils {
+    private ColorUtils() {
+        throw new UnsupportedOperationException("Utility class");
+    }
     
     // Minecraft/Hytale color code mapping
     private static final Map<Character, Color> COLOR_CODES = new HashMap<>();

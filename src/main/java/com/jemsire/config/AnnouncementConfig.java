@@ -11,6 +11,8 @@ import com.hypixel.hytale.codec.builder.BuilderCodec;
 public class AnnouncementConfig {
     private int intervalSeconds = 300; // Default: 5 minutes
     private boolean enableRandomization = false; // Default: sequential order (false = sequential, true = random)
+    private boolean createExampleMessages = true; // Default: true
+    private String logLevel = "INFO"; // Default: INFO (INFO, DEBUG, NONE)
     private int version = 1;
 
     public AnnouncementConfig() {
@@ -26,9 +28,23 @@ public class AnnouncementConfig {
                     .add()
 
                     .append(
-                            new KeyedCodec<Boolean>("Enable-Randomization", Codec.BOOLEAN),
+                            new KeyedCodec<Boolean>("EnableRandomization", Codec.BOOLEAN),
                             (config, value, info) -> config.enableRandomization = value != null ? value : false,
                             (config, info) -> config.enableRandomization
+                    )
+                    .add()
+
+                    .append(
+                            new KeyedCodec<Boolean>("CreateExampleMessages", Codec.BOOLEAN),
+                            (config, value, info) -> config.createExampleMessages = value != null ? value : true,
+                            (config, info) -> config.createExampleMessages
+                    )
+                    .add()
+
+                    .append(
+                            new KeyedCodec<String>("LogLevel", Codec.STRING),
+                            (config, value, info) -> config.logLevel = value != null ? value : "INFO",
+                            (config, info) -> config.logLevel
                     )
                     .add()
 
@@ -47,6 +63,14 @@ public class AnnouncementConfig {
 
     public boolean isEnableRandomization() {
         return enableRandomization;
+    }
+
+    public boolean isCreateExampleMessages() {
+        return createExampleMessages;
+    }
+
+    public String getLogLevel() {
+        return logLevel;
     }
 
     public int getVersion() {
