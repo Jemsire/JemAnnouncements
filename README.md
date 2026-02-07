@@ -6,7 +6,11 @@
 ![GitHub pull requests](https://img.shields.io/github/issues-pr/jemsire/JemAnnouncements)
 ![GitHub license](https://img.shields.io/github/license/jemsire/JemAnnouncements)
 
+---
+
 A Hytale server plugin that provides an automated announcement system with support for chat, notifications, titles, and sound messages. This plugin allows you to schedule and customize announcements that are automatically sent to all online players at configurable intervals.
+
+---
 
 ## Current Features
 
@@ -14,7 +18,7 @@ A Hytale server plugin that provides an automated announcement system with suppo
 - **Flexible Scheduling**: Configurable intervals for automatic announcements
 - **Message Ordering**: Choose between sequential or random message ordering
 - **Priority System**: Set message priorities to control display order
-- **Message Centering**: Automatically center chat messages for better presentation
+- **Message Centering**: Automatically center chat messages for a better presentation
 - **Multiple Message Files**: Create unlimited announcement messages as separate JSON files
 - **Rich Formatting**: Support for hex, rgb, legacy color(`&` codes), and TinyMsg tags
 - **Hot Reload**: Reload configuration and messages without restarting the server using `/announce-reload`
@@ -23,12 +27,22 @@ A Hytale server plugin that provides an automated announcement system with suppo
 - **Update Check**: Check GitHub releases for updates and notifies you if there is one
 - **Example Templates**: Automatically generates example message templates on first launch
 
+---
+
 ## Message Types
 
-- **Chat Messages**: Send formatted chat messages to all players (supports multiple lines, centering, and rich formatting)
-- **Notification**: Display notifications similar to item pickup notifications with custom icons
-- **Title Messages**: Show title and subtitle messages with customizable fade in/out timing and major title support
-- **Sound Effects**: Play custom sounds to all players with configurable volume and pitch
+**Chat Messages**: Send formatted chat messages to all players (supports multiple lines, centering, and rich formatting)
+![Chat Example](https://raw.githubusercontent.com/jemsire/JemAnnouncements/main/assets/images/ChatExample.png)
+
+**Notification**: Display notifications similar to item pickup notifications with custom icons
+![Notification Example](https://raw.githubusercontent.com/jemsire/JemAnnouncements/main/assets/images/NotificationExample.png)
+
+**Title Messages**: Show title and subtitle messages with customizable fade in/out timing and major title support
+![Title Example](https://raw.githubusercontent.com/jemsire/JemAnnouncements/main/assets/images/TitleExample.png)
+
+**Sound Effects**: Play custom sounds to all players with configurable volume and pitch
+
+---
 
 ## Installation
 
