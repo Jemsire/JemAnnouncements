@@ -1,18 +1,15 @@
 {
   "Group": "Jemsire",
   "Name": "JemAnnouncements",
-  "Version": "1.2.0",
+  "Version": "1.3.0",
   "Description": "Automated announcement system with support for chat, action bar, title, and sound messages",
-  "Authors": [
-    {
-      "Name": "TinyTank800"
-    }
-  ],
+  "Authors": [{"Name": "TinyTank800"}],
   "Website": "https://www.curseforge.com/members/jemsire/projects",
-  "ServerVersion": "*",
+  "Main": "com.jemsire.plugin.AnnouncementPlugin",
   "Dependencies": {},
-  "OptionalDependencies": {},
-  "DisabledByDefault": false,
-  "IncludesAssetPack": true,
-  "Main": "com.jemsire.plugin.AnnouncementPlugin"
+  "OptionalDependencies": {
+    "Jemsire:JemPlaceholders": "*"
+  },
+  "LoadOrder": "POSTWORLD",
+  "IncludesAssetPack": true
 }

@@ -131,7 +131,7 @@ public class AnnouncementScheduler {
             
             AnnouncementMessage message;
             
-            if (config.isRandom()) {
+            if (config.isEnableRandomization()) {
                 // Get random message
                 message = MessageLoader.getRandomMessage();
             } else {
@@ -141,7 +141,7 @@ public class AnnouncementScheduler {
             }
             
             if (message != null) {
-                String orderType = config.isRandom() ? "random" : "sequential";
+                String orderType = config.isEnableRandomization() ? "random" : "sequential";
                 Logger.debug("Sending announcement message (order: " + orderType + ")");
                 MessageSender.sendAnnouncement(message);
                 Logger.debug("Announcement sent successfully");

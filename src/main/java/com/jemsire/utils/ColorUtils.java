@@ -158,7 +158,7 @@ public class ColorUtils {
         
         return null;
     }
-    
+
     /**
      * Checks if a character is a valid color code
      */
@@ -256,7 +256,7 @@ public class ColorUtils {
      */
     public static String convertLegacyColorCodes(String text) {
         if (text == null) {
-            return text;
+            return null;
         }
         // First convert hex patterns so we don't confuse them with single-char codes
         String s = text;
@@ -264,7 +264,7 @@ public class ColorUtils {
         s = s.replaceAll("&#([0-9A-Fa-f]{6})", "<color:#$1>");
         // &x&R&R&G&G&B&B -> <color:#RRGGBB>
         Matcher hexLegacy = Pattern.compile("&x(&[0-9A-Fa-f]){6}").matcher(s);
-        StringBuffer hexRepl = new StringBuffer();
+        StringBuilder hexRepl = new StringBuilder();
         while (hexLegacy.find()) {
             String match = hexLegacy.group();
             // match is "&x&R&R&G&G&B&B" - hex digits at indices 3,5,7,9,11,13
@@ -337,7 +337,7 @@ public class ColorUtils {
      */
     public static String stripOffsetTags(String text) {
         if (text == null) {
-            return text;
+            return null;
         }
         return OFFSET_TAG_PATTERN.matcher(text).replaceAll("");
     }

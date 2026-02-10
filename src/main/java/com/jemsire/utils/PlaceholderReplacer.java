@@ -27,7 +27,7 @@ public class PlaceholderReplacer {
             return json;
         }
 
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         Matcher matcher = PLACEHOLDER_PATTERN.matcher(json);
 
         while (matcher.find()) {

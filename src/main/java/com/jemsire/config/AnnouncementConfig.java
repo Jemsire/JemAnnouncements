@@ -14,6 +14,7 @@ public class AnnouncementConfig {
     private boolean createExampleMessages = true; // Default: true
     private String logLevel = "INFO"; // Default: INFO (INFO, DEBUG, NONE)
     private int version = 1;
+    private boolean updateCheck = true;
 
     public AnnouncementConfig() {
     }
@@ -55,6 +56,13 @@ public class AnnouncementConfig {
                     )
                     .add()
 
+                    .append(
+                            new KeyedCodec<Boolean>("CheckUpdate", Codec.BOOLEAN),
+                            (config, value, info) -> config.updateCheck = value != null ? value : true,
+                            (config, info) -> config.updateCheck
+                    )
+                    .add()
+
                     .build();
 
     public int getIntervalSeconds() {
@@ -77,11 +85,7 @@ public class AnnouncementConfig {
         return version;
     }
 
-    public boolean isSequential() {
-        return !enableRandomization;
-    }
-
-    public boolean isRandom() {
-        return enableRandomization;
+    public boolean checkUpdates() {
+        return updateCheck;
     }
 }

@@ -1,5 +1,6 @@
 package com.jemsire.plugin;
 
+import com.hypixel.hytale.common.semver.Semver;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.util.Config;
@@ -7,9 +8,12 @@ import com.jemsire.commands.AnnounceCommand;
 import com.jemsire.commands.ReloadCommand;
 import com.jemsire.config.AnnouncementConfig;
 import com.jemsire.config.AnnouncementMessage;
+import com.jemsire.expansion.JemAnnouncementsExpansion;
+import com.jemsire.jemplaceholders.api.JemPlaceholdersAPI;
 import com.jemsire.utils.AnnouncementScheduler;
 import com.jemsire.utils.Logger;
 import com.jemsire.utils.MessageLoader;
+import com.jemsire.utils.UpdateChecker;
 
 import javax.annotation.Nonnull;
 import java.io.InputStream;
@@ -29,6 +33,8 @@ import java.util.stream.Stream;
 public class AnnouncementPlugin extends JavaPlugin {
     private static AnnouncementPlugin instance;
 
+    private final Semver version;
+
     public static AnnouncementPlugin get() {
         return instance;
     }
@@ -41,6 +47,8 @@ public class AnnouncementPlugin extends JavaPlugin {
     public AnnouncementPlugin(@Nonnull JavaPluginInit init) {
         super(init);
         Logger.info("Starting JemAnnouncements Plugin...");
+
+        version = init.getPluginManifest().getVersion();
 
         // Register the main configuration
         this.announcementConfig = this.withConfig("AnnouncementConfig", AnnouncementConfig.CODEC);
@@ -85,14 +93,13 @@ public class AnnouncementPlugin extends JavaPlugin {
                 Path relativePath = messagesDir.relativize(messageFile);
                 String pathString = relativePath.toString().replace("\\", "/");
                 String configPath = "messages/" + pathString.substring(0, pathString.lastIndexOf('.'));
-                String configName = pathString; // Use full relative path as key
 
                 // Register config using withConfig (must be in constructor)
                 Config<AnnouncementMessage> config = this.withConfig(
                         configPath,
                         AnnouncementMessage.CODEC
                 );
-                messageConfigs.put(configName, config);
+                messageConfigs.put(pathString, config);
             }
 
             Logger.info("Registered " + messageConfigs.size() + " message config(s)");
@@ -183,11 +190,31 @@ public class AnnouncementPlugin extends JavaPlugin {
     }
 
     @Override
+    protected void start() {
+        if (isJemPlaceholdersEnabled()) {
+            JemPlaceholdersAPI.registerExpansion(new JemAnnouncementsExpansion());
+        }
+
+        if(announcementConfig.get().checkUpdates()){
+            new UpdateChecker(version.toString()).checkForUpdatesAsync();
+        }
+
+
+        Logger.info("[JemAnnouncements] Started!");
+        Logger.info("[JemAnnouncements] Use /jemp help for commands");
+    }
+
+    @Override
     protected void shutdown() {
         Logger.info("Shutting down JemAnnouncements...");
 
         // Stop the scheduler
         AnnouncementScheduler.stop();
+
+        // Shutdown updater
+        if(announcementConfig.get().checkUpdates()){
+            UpdateChecker.shutdown();
+        }
 
         // Save config
         announcementConfig.save();
@@ -250,9 +277,7 @@ public class AnnouncementPlugin extends JavaPlugin {
             for (Path messageFile : messageFiles) {
                 // Get relative path from messages directory
                 Path relativePath = messagesDir.relativize(messageFile);
-                String pathString = relativePath.toString().replace("\\", "/");
-                String configPath = "messages/" + pathString.substring(0, pathString.lastIndexOf('.'));
-                String configName = pathString; // Use full relative path as key
+                String configName = relativePath.toString().replace("\\", "/"); // Use full relative path as key
 
                 if (messageConfigs.containsKey(configName)) {
                     continue;
@@ -275,6 +300,15 @@ public class AnnouncementPlugin extends JavaPlugin {
             }
         } catch (Exception e) {
             Logger.warning("Failed to discover new message files on reload: " + e.getMessage());
+        }
+    }
+
+    public boolean isJemPlaceholdersEnabled() {
+        try {
+            Class.forName("com.jemsire.jemplaceholders.api.JemPlaceholdersAPI");
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
         }
     }
 }

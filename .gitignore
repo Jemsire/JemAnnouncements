@@ -1,5 +1,6 @@
 # Ignore HytaleServer.jar but keep libs folder structure
 libs/HytaleServer.jar
+libs/*
 
 .gradle
 build/

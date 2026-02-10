@@ -17,6 +17,7 @@ import com.hypixel.hytale.server.core.util.EventTitleUtil;
 import com.hypixel.hytale.server.core.util.NotificationUtil;
 import com.jemsire.config.AnnouncementMessage;
 import com.jemsire.plugin.AnnouncementPlugin;
+import com.jemsire.jemplaceholders.api.JemPlaceholdersAPI;
 
 import java.util.List;
 
@@ -95,23 +96,29 @@ public class MessageSender {
             return;
         }
 
-        // Send each message in order
-        for (String chatMessage : chatMessages) {
-            if (chatMessage == null || chatMessage.isEmpty()) {
-                continue; // Skip empty messages
-            }
+        //Send to each player
+        for (PlayerRef player : players) {
 
-            // One <offset:N> per line: positive = more leading spaces, negative = fewer (stripped before display)
-            int offset = ColorUtils.getOffset(chatMessage);
-            String withoutOffsetTags = ColorUtils.stripOffsetTags(chatMessage);
-            String messageToSend = shouldCenter ? centerText(withoutOffsetTags, offset) : withoutOffsetTags;
+            // Send each message in order
+            for (String chatMessage : chatMessages) {
+                if (chatMessage == null || chatMessage.isEmpty()) {
+                    continue; // Skip empty messages
+                }
 
-            // Parse with TinyMsg API (tags: <color:X>, <gradient:X:Y>, <b>, <link:url>, etc.); legacy & codes converted first
-            String processedMessage = ColorUtils.convertLegacyColorCodes(messageToSend);
-            Message message = TinyMsg.parse(processedMessage);
+                String parsedMessage = chatMessage;
+                if (AnnouncementPlugin.get().isJemPlaceholdersEnabled()) {
+                    parsedMessage = JemPlaceholdersAPI.setPlaceholders(player, chatMessage);
+                }
 
-            // Send to all players
-            for (PlayerRef player : players) {
+                // One <offset:N> per line: positive = more leading spaces, negative = fewer (stripped before display)
+                int offset = ColorUtils.getOffset(parsedMessage);
+                String withoutOffsetTags = ColorUtils.stripOffsetTags(parsedMessage);
+                String messageToSend = shouldCenter ? centerText(withoutOffsetTags, offset) : withoutOffsetTags;
+
+                // Parse with TinyMsg API (tags: <color:X>, <gradient:X:Y>, <b>, <link:url>, etc.); legacy & codes converted first
+                String processedMessage = ColorUtils.convertLegacyColorCodes(messageToSend);
+                Message message = TinyMsg.parse(processedMessage);
+
                 try {
                     player.sendMessage(message);
                 } catch (Exception e) {
@@ -120,11 +127,12 @@ public class MessageSender {
             }
         }
     }
-    
+
     /**
      * Centers text by calculating display width and adding leading spaces.
      * Uses visible width (tags/hex not counted). Optional offset adjusts: positive = more spaces (shift right), negative = fewer (shift left).
-     * @param text The text to center (may contain TinyMsg tags and legacy &amp; codes; &lt;offset:N&gt; should already be stripped)
+     *
+     * @param text   The text to center (may contain TinyMsg tags and legacy &amp; codes; &lt;offset:N&gt; should already be stripped)
      * @param offset Adjustment to leading spaces (e.g. from &lt;offset:5&gt; or &lt;offset:-2&gt; tags)
      * @return The centered text with spaces prepended
      */

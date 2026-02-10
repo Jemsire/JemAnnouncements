@@ -28,8 +28,9 @@ repositories {
 
 dependencies {
     implementation("com.hypixel.hytale:Server:+")
-    implementation("com.google.code.gson:gson:2.10.1")
+    compileOnly(files("libs/JemPlaceholders-1.0.0.jar"))
 
+    implementation("com.google.code.gson:gson:2.10.1")
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

@@ -87,20 +87,20 @@ public final class TinyMsg {
             return new StyleState(null, gradient, bold, italic, underlined, monospace, link);
         }
 
-        StyleState withBold(boolean bold) {
-            return new StyleState(color, gradient, bold, italic, underlined, monospace, link);
+        StyleState withBold() {
+            return new StyleState(color, gradient, true, italic, underlined, monospace, link);
         }
 
-        StyleState withItalic(boolean italic) {
-            return new StyleState(color, gradient, bold, italic, underlined, monospace, link);
+        StyleState withItalic() {
+            return new StyleState(color, gradient, bold, true, underlined, monospace, link);
         }
 
-        StyleState withUnderlined(boolean underlined) {
-            return new StyleState(color, gradient, bold, italic, underlined, monospace, link);
+        StyleState withUnderlined() {
+            return new StyleState(color, gradient, bold, italic, true, monospace, link);
         }
 
-        StyleState withMonospace(boolean monospace) {
-            return new StyleState(color, gradient, bold, italic, underlined, monospace, link);
+        StyleState withMonospace() {
+            return new StyleState(color, gradient, bold, italic, underlined, true, link);
         }
 
         StyleState withLink(String link) {
@@ -178,23 +178,23 @@ public final class TinyMsg {
 
                         case "bold":
                         case "b":
-                            newState = newState.withBold(true);
+                            newState = newState.withBold();
                             break;
 
                         case "italic":
                         case "i":
                         case "em":
-                            newState = newState.withItalic(true);
+                            newState = newState.withItalic();
                             break;
 
                         case "underline":
                         case "u":
-                            newState = newState.withUnderlined(true);
+                            newState = newState.withUnderlined();
                             break;
 
                         case "monospace":
                         case "mono":
-                            newState = newState.withMonospace(true);
+                            newState = newState.withMonospace();
                             break;
 
                         case "link":
