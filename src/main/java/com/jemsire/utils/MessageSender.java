@@ -106,9 +106,9 @@ public class MessageSender {
                 }
 
                 String parsedMessage = chatMessage;
-                if (AnnouncementPlugin.get().isJemPlaceholdersEnabled()) {
-                    parsedMessage = JemPlaceholdersAPI.setPlaceholders(player, chatMessage);
-                }
+                //if (AnnouncementPlugin.get().isJemPlaceholdersEnabled()) {
+                //    parsedMessage = JemPlaceholdersAPI.setPlaceholders(player, chatMessage);
+                //}
 
                 // One <offset:N> per line: positive = more leading spaces, negative = fewer (stripped before display)
                 int offset = ColorUtils.getOffset(parsedMessage);

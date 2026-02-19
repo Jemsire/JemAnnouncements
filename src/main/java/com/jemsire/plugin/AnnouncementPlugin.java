@@ -191,9 +191,9 @@ public class AnnouncementPlugin extends JavaPlugin {
 
     @Override
     protected void start() {
-        if (isJemPlaceholdersEnabled()) {
-            JemPlaceholdersAPI.registerExpansion(new JemAnnouncementsExpansion());
-        }
+        //if (isJemPlaceholdersEnabled()) {
+        //    JemPlaceholdersAPI.registerExpansion(new JemAnnouncementsExpansion());
+        //}
 
         if(announcementConfig.get().checkUpdates()){
             new UpdateChecker(version.toString()).checkForUpdatesAsync();
@@ -305,7 +305,7 @@ public class AnnouncementPlugin extends JavaPlugin {
 
     public boolean isJemPlaceholdersEnabled() {
         try {
-            Class.forName("com.jemsire.jemplaceholders.api.JemPlaceholdersAPI");
+            Class.forName("com.jemsire.jemplaceholders.api.JemPlaceholdersAPI", false, getClass().getClassLoader());
             return true;
         } catch (ClassNotFoundException e) {
             return false;
